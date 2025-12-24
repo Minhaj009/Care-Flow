@@ -1,90 +1,55 @@
-import { ExtractedPatientData } from '../types';
+// src/lib/gemini.ts (or wherever your API logic lives)
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const GEMINI_MODELS = ['gemini-1.5-flash-001', 'gemini-pro'];
+export async function processTranscriptWithGemini(transcript) {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) throw new Error("Gemini API Key is missing");
 
-export const extractPatientData = async (transcript: string): Promise<ExtractedPatientData> => {
-  if (!GEMINI_API_KEY) {
-    throw new Error('Gemini API key is not configured. Please add VITE_GEMINI_API_KEY to your .env file.');
-  }
+  // WE ARE HITTING THE ENDPOINT DIRECTLY
+  // Model: gemini-1.5-flash (Standard, fast, cheap)
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
-  if (!transcript || transcript.trim().length === 0) {
-    throw new Error('Transcript is empty. Please record some speech first.');
-  }
-
-  const prompt = `Extract the following JSON structure from this medical check-in transcript. Handle mixed English/Roman Urdu by translating to English. Return only valid JSON:
-{
-  "patient_name": "string",
-  "age": "string",
-  "symptoms": ["array of symptoms"],
-  "duration": "string describing how long symptoms have been present"
-}
-If any field cannot be determined, use null.
-
-Transcript: ${transcript}`;
-
-  let lastError: Error | null = null;
-
-  for (const model of GEMINI_MODELS) {
-    try {
-      const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
-
-      const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: prompt,
-                },
-              ],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.1,
-            maxOutputTokens: 500,
-          },
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(`Gemini API error: ${response.statusText}. ${JSON.stringify(errorData)}`);
-      }
-
-      const data = await response.json();
-
-      if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
-        throw new Error('Invalid response from Gemini API');
-      }
-
-      const textContent = data.candidates[0].content.parts[0].text;
-
-      const jsonMatch = textContent.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error('Could not extract JSON from Gemini response');
-      }
-
-      const extractedData: ExtractedPatientData = JSON.parse(jsonMatch[0]);
-
-      return {
-        patient_name: extractedData.patient_name || null,
-        age: extractedData.age || null,
-        symptoms: Array.isArray(extractedData.symptoms) ? extractedData.symptoms : null,
-        duration: extractedData.duration || null,
-      };
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error('Unknown error');
-      continue;
+  const prompt = `
+    You are a medical data structure engine. 
+    Analyze this transcript: "${transcript}"
+    
+    Extract the following JSON strictly. Do not use Markdown formatting (no \`\`\`json blocks). Just return the raw JSON string.
+    If the language is mixed (Roman Urdu), translate to English first.
+    
+    Structure:
+    {
+      "patient_data": { "name": "string or null", "age": "string or null", "gender": "string or null" },
+      "symptoms_data": { "primary_symptom": "string", "duration": "string", "severity": "string" }
     }
-  }
+  `;
 
-  if (lastError) {
-    throw new Error(`Failed to extract patient data: ${lastError.message}`);
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{ text: prompt }]
+        }]
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Gemini API Error: ${errorData.error?.message || response.statusText}`);
+    }
+
+    const data = await response.json();
+    const rawText = data.candidates[0].content.parts[0].text;
+    
+    // Clean up if Gemini accidentally adds markdown code blocks
+    const cleanJson = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+    
+    return JSON.parse(cleanJson);
+
+  } catch (error) {
+    console.error("Critical AI Failure:", error);
+    throw error;
   }
-  throw new Error('Failed to extract patient data: Unknown error');
-};
+}
