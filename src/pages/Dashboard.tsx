@@ -1,13 +1,22 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle, AlertCircle, Building2 } from 'lucide-react';
+import { CheckCircle, AlertCircle, Building2, UserPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardHeader } from '../components/DashboardHeader';
 import { RecordingInterface } from '../components/RecordingInterface';
 import { RecentCheckIns } from '../components/RecentCheckIns';
 import { EditPatientVisitModal } from '../components/EditPatientVisitModal';
+import PatientSearchModal from '../components/PatientSearchModal';
+import PatientRegistrationModal from '../components/PatientRegistrationModal';
+import VitalSignsModal from '../components/VitalSignsModal';
 import { processTranscriptWithGemini } from '../services/geminiService';
-import { savePatientVisit, getRecentVisits, deletePatientVisit, updatePatientVisit } from '../services/databaseService';
-import { PatientVisit, Symptom } from '../types';
+import {
+  savePatientVisit,
+  getRecentVisits,
+  deletePatientVisit,
+  updatePatientVisit,
+  getMedicalHistory
+} from '../services/databaseService';
+import { PatientVisit, Symptom, Patient, PatientMedicalHistory, VitalSigns } from '../types';
 import { supabase } from '../lib/supabase';
 import { useProfile } from '../contexts/ProfileContext';
 import type { User } from '@supabase/supabase-js';
@@ -22,6 +31,13 @@ export const Dashboard = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [editingVisit, setEditingVisit] = useState<PatientVisit | null>(null);
+
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [patientHistory, setPatientHistory] = useState<PatientMedicalHistory | null>(null);
+  const [showPatientSearch, setShowPatientSearch] = useState(false);
+  const [showPatientRegistration, setShowPatientRegistration] = useState(false);
+  const [showVitalSigns, setShowVitalSigns] = useState(false);
+  const [lastSavedVisitId, setLastSavedVisitId] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -112,9 +128,49 @@ export const Dashboard = () => {
     }
   };
 
+  const handleSelectPatient = async (patient: Patient) => {
+    setSelectedPatient(patient);
+    setShowPatientSearch(false);
+
+    try {
+      const history = await getMedicalHistory(patient.id);
+      setPatientHistory(history);
+    } catch (error) {
+      console.error('Failed to load patient history:', error);
+    }
+  };
+
+  const handleNewPatient = () => {
+    setShowPatientSearch(false);
+    setShowPatientRegistration(true);
+  };
+
+  const handlePatientRegistered = (patient: Patient) => {
+    setSelectedPatient(patient);
+    setShowPatientRegistration(false);
+    setSuccessMessage(`Patient ${patient.full_name} registered successfully!`);
+    setTimeout(() => setSuccessMessage(null), 5000);
+  };
+
+  const handleVitalSignsSaved = (vitalSigns: VitalSigns) => {
+    setShowVitalSigns(false);
+    setSuccessMessage('Vital signs recorded successfully!');
+    setTimeout(() => setSuccessMessage(null), 5000);
+  };
+
+  const handleClearPatient = () => {
+    setSelectedPatient(null);
+    setPatientHistory(null);
+  };
+
   const handleTranscriptComplete = async (transcript: string) => {
     if (!user) {
       setErrorMessage('You must be logged in to save patient check-ins');
+      return;
+    }
+
+    if (!selectedPatient) {
+      setErrorMessage('Please select a patient before recording');
       return;
     }
 
@@ -129,10 +185,18 @@ export const Dashboard = () => {
       const aiJson = await processTranscriptWithGemini(transcript);
       console.log("AI Extracted Data:", aiJson);
 
-      await savePatientVisit(transcript, aiJson, user.id);
+      const visit = await savePatientVisit(
+        transcript,
+        aiJson,
+        user.id,
+        selectedPatient.id,
+        'New Visit'
+      );
       console.log("Saved to database successfully");
 
+      setLastSavedVisitId(visit.id);
       setSuccessMessage('Patient check-in saved successfully!');
+      setShowVitalSigns(true);
 
       await loadRecentVisits();
 
@@ -187,7 +251,46 @@ export const Dashboard = () => {
         )}
 
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-8 mb-8">
-          <RecordingInterface onTranscriptComplete={handleTranscriptComplete} isProcessing={isProcessing} />
+          {!selectedPatient ? (
+            <div className="text-center py-12">
+              <UserPlus className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Select a Patient to Continue</h3>
+              <p className="text-gray-600 mb-6">
+                Search for an existing patient or register a new one to start the check-in process
+              </p>
+              <button
+                onClick={() => setShowPatientSearch(true)}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+              >
+                Select Patient
+              </button>
+            </div>
+          ) : (
+            <div>
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Recording for: {selectedPatient.full_name}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {selectedPatient.cnic ? `CNIC: ${selectedPatient.cnic}` : 'Walk-in Patient'}
+                  </p>
+                </div>
+                <button
+                  onClick={handleClearPatient}
+                  className="px-4 py-2 text-gray-700 border rounded-lg hover:bg-gray-50"
+                >
+                  Change Patient
+                </button>
+              </div>
+              <RecordingInterface
+                onTranscriptComplete={handleTranscriptComplete}
+                isProcessing={isProcessing}
+                selectedPatient={selectedPatient}
+                patientHistory={patientHistory}
+              />
+            </div>
+          )}
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-8">
@@ -201,6 +304,32 @@ export const Dashboard = () => {
           isOpen={!!editingVisit}
           onClose={() => setEditingVisit(null)}
           onSave={handleSaveEdit}
+        />
+      )}
+
+      <PatientSearchModal
+        isOpen={showPatientSearch}
+        onClose={() => setShowPatientSearch(false)}
+        onSelectPatient={handleSelectPatient}
+        onNewPatient={handleNewPatient}
+        receptionistId={user.id}
+      />
+
+      <PatientRegistrationModal
+        isOpen={showPatientRegistration}
+        onClose={() => setShowPatientRegistration(false)}
+        onSuccess={handlePatientRegistered}
+        receptionistId={user.id}
+      />
+
+      {selectedPatient && (
+        <VitalSignsModal
+          isOpen={showVitalSigns}
+          onClose={() => setShowVitalSigns(false)}
+          onSuccess={handleVitalSignsSaved}
+          patientId={selectedPatient.id}
+          visitId={lastSavedVisitId || undefined}
+          measuredBy={user.id}
         />
       )}
     </div>

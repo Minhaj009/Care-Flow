@@ -14,6 +14,7 @@ export interface Symptom {
 export interface PatientVisit {
   id: string;
   created_at: string;
+  updated_at?: string;
   raw_transcript: string;
   patient_data: {
     name?: string | null;
@@ -22,6 +23,13 @@ export interface PatientVisit {
     gender?: string | null;
   };
   symptoms_data: Symptom[];
+  patient_id?: string;
+  visit_type?: string;
+  doctor_name?: string;
+  consultation_fee?: number;
+  follow_up_date?: string;
+  visit_notes?: string;
+  receptionist_id?: string;
 }
 
 export interface RecordingState {
@@ -30,4 +38,111 @@ export interface RecordingState {
   interimTranscript: string;
   isSupported: boolean;
   error: string | null;
+}
+
+export interface Patient {
+  id: string;
+  cnic: string | null;
+  full_name: string;
+  phone_number: string | null;
+  email: string | null;
+  address: string | null;
+  city: string | null;
+  date_of_birth: string | null;
+  gender: string | null;
+  blood_group: string | null;
+  marital_status: string | null;
+  emergency_contact_name: string | null;
+  emergency_contact_phone: string | null;
+  photo_url: string | null;
+  receptionist_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Allergy {
+  name: string;
+  severity: 'Mild' | 'Moderate' | 'Severe';
+  reaction: string;
+}
+
+export interface ChronicCondition {
+  name: string;
+  diagnosisDate: string;
+}
+
+export interface Medication {
+  name: string;
+  dosage: string;
+  frequency: string;
+  startDate: string;
+}
+
+export interface Surgery {
+  name: string;
+  date: string;
+  hospital: string;
+}
+
+export interface PatientMedicalHistory {
+  id: string;
+  patient_id: string;
+  known_allergies: Allergy[];
+  chronic_conditions: ChronicCondition[];
+  current_medications: Medication[];
+  past_surgeries: Surgery[];
+  family_medical_history: string;
+  smoking_status: string;
+  alcohol_consumption: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TestValue {
+  parameter: string;
+  value: string;
+  unit: string;
+  referenceRange: string;
+}
+
+export interface FileAttachment {
+  id: string;
+  fileName: string;
+  filePath: string;
+  fileType: string;
+  fileSize: number;
+  uploadedAt: string;
+}
+
+export interface MedicalTest {
+  id: string;
+  patient_id: string;
+  test_type: string;
+  test_date: string;
+  lab_name: string;
+  test_values: TestValue[];
+  doctor_notes: string;
+  file_attachments: FileAttachment[];
+  receptionist_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface VitalSigns {
+  id: string;
+  patient_id: string;
+  visit_id: string | null;
+  blood_pressure_systolic: number | null;
+  blood_pressure_diastolic: number | null;
+  temperature: number | null;
+  temperature_unit: string;
+  pulse_rate: number | null;
+  respiratory_rate: number | null;
+  oxygen_saturation: number | null;
+  weight: number | null;
+  height: number | null;
+  notes: string;
+  measured_by: string;
+  measured_at: string;
+  created_at: string;
 }
