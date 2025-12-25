@@ -56,6 +56,39 @@ export const getRecentVisits = async (limit: number = 10): Promise<PatientVisit[
   return (data as PatientVisit[]) || [];
 };
 
+export const updatePatientVisit = async (
+  visitId: string,
+  transcript: string,
+  patientData: any,
+  symptomsData: any[]
+): Promise<void> => {
+  if (!Array.isArray(symptomsData)) {
+    throw new Error('Symptoms data must be an array');
+  }
+
+  if (typeof patientData !== 'object' || patientData === null) {
+    throw new Error('Patient data must be an object');
+  }
+
+  const { error } = await supabase.rpc('update_patient_visit', {
+    row_id: visitId,
+    new_transcript: transcript,
+    new_patient_data: patientData,
+    new_symptoms_data: symptomsData,
+  });
+
+  if (error) {
+    console.error('Update failed:', error);
+    if (error.message.includes('Not authenticated')) {
+      throw new Error('You must be logged in to update patient visits');
+    } else if (error.message.includes('not found or access denied')) {
+      throw new Error('Unable to update: record not found or access denied');
+    } else {
+      throw new Error(`Failed to update visit: ${error.message}`);
+    }
+  }
+};
+
 export const deletePatientVisit = async (visitId: string): Promise<void> => {
   const { error } = await supabase
     .from('patient_visits')

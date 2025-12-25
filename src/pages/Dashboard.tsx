@@ -4,9 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { DashboardHeader } from '../components/DashboardHeader';
 import { RecordingInterface } from '../components/RecordingInterface';
 import { RecentCheckIns } from '../components/RecentCheckIns';
+import { EditPatientVisitModal } from '../components/EditPatientVisitModal';
 import { processTranscriptWithGemini } from '../services/geminiService';
-import { savePatientVisit, getRecentVisits, deletePatientVisit } from '../services/databaseService';
-import { PatientVisit } from '../types';
+import { savePatientVisit, getRecentVisits, deletePatientVisit, updatePatientVisit } from '../services/databaseService';
+import { PatientVisit, Symptom } from '../types';
 import { supabase } from '../lib/supabase';
 import { useProfile } from '../contexts/ProfileContext';
 import type { User } from '@supabase/supabase-js';
@@ -20,6 +21,7 @@ export const Dashboard = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [editingVisit, setEditingVisit] = useState<PatientVisit | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -69,6 +71,44 @@ export const Dashboard = () => {
       console.error('Error deleting visit:', error);
       setErrorMessage(error instanceof Error ? error.message : 'Failed to delete visit');
       await loadRecentVisits();
+    }
+  };
+
+  const handleEditVisit = (visit: PatientVisit) => {
+    setEditingVisit(visit);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+  };
+
+  const handleSaveEdit = async (
+    visitId: string,
+    transcript: string,
+    patientData: any,
+    symptomsData: Symptom[]
+  ) => {
+    const previousVisits = [...visits];
+
+    setVisits((prev) =>
+      prev.map((v) =>
+        v.id === visitId
+          ? { ...v, patient_data: patientData, symptoms_data: symptomsData }
+          : v
+      )
+    );
+
+    try {
+      await updatePatientVisit(visitId, transcript, patientData, symptomsData);
+      setSuccessMessage('Patient visit updated successfully!');
+
+      await loadRecentVisits();
+
+      setTimeout(() => {
+        setSuccessMessage(null);
+      }, 5000);
+    } catch (error) {
+      console.error('Error updating visit:', error);
+      setErrorMessage(error instanceof Error ? error.message : 'Failed to update visit');
+      setVisits(previousVisits);
     }
   };
 
@@ -151,9 +191,18 @@ export const Dashboard = () => {
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-8">
-          <RecentCheckIns visits={visits} isLoading={isLoading} onDelete={handleDeleteVisit} />
+          <RecentCheckIns visits={visits} isLoading={isLoading} onDelete={handleDeleteVisit} onEdit={handleEditVisit} />
         </div>
       </main>
+
+      {editingVisit && (
+        <EditPatientVisitModal
+          visit={editingVisit}
+          isOpen={!!editingVisit}
+          onClose={() => setEditingVisit(null)}
+          onSave={handleSaveEdit}
+        />
+      )}
     </div>
   );
 };
