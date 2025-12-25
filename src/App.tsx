@@ -6,6 +6,7 @@ import { About } from './pages/About';
 import { Contact } from './pages/Contact';
 import { Auth } from './components/Auth';
 import { Dashboard } from './pages/Dashboard';
+import { Patients } from './pages/Patients';
 import { Settings } from './pages/Settings';
 import { ProfileProvider } from './contexts/ProfileContext';
 
@@ -23,6 +24,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/patients"
+            element={
+              <ProtectedRoute>
+                <Patients />
               </ProtectedRoute>
             }
           />
