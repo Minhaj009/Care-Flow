@@ -2,24 +2,45 @@ export async function processTranscriptWithGemini(transcript) {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) throw new Error("Gemini API Key is missing");
 
+  console.log("=== PROCESSING TRANSCRIPT ===");
+  console.log("Raw Transcript:", transcript);
+  console.log("Transcript Length:", transcript.length);
+
   // UPDATED: Matches your exact JSON inventory
   // Priority: 2.5 Flash (Newest Free) -> 2.0 Flash (Stable Free) -> Generic Flash
   const modelsToTry = [
-    "gemini-2.5-flash", 
+    "gemini-2.5-flash",
     "gemini-2.0-flash",
     "gemini-flash-latest"
   ];
 
   const prompt = `
-    You are a medical data engine. Analyze this transcript: "${transcript}"
-    
-    Extract the following JSON strictly. No Markdown.
-    
-    Structure:
+    You are a medical data extraction system. Analyze this patient check-in transcript and extract structured data.
+
+    Transcript: "${transcript}"
+
+    CRITICAL: Look for the patient's NAME carefully. Common patterns include:
+    - "My name is [Name]"
+    - "I'm [Name]"
+    - "This is [Name]"
+    - Any mention of a person's name in the context of being the patient
+
+    Extract the following information into valid JSON format (no markdown, no code blocks):
+
     {
-      "patient_data": { "name": "string", "age": "string", "gender": "string" },
-      "symptoms_data": { "primary_symptom": "string", "duration": "string", "severity": "string" }
+      "patient_data": {
+        "name": "patient's full name or null if not mentioned",
+        "age": "patient's age or null if not mentioned",
+        "gender": "male/female/other or null if not mentioned"
+      },
+      "symptoms_data": {
+        "primary_symptom": "main symptom or null if not mentioned",
+        "duration": "how long they've had it or null if not mentioned",
+        "severity": "mild/moderate/severe or null if not mentioned"
+      }
     }
+
+    Return ONLY the JSON object, nothing else.
   `;
 
   // LOOP THROUGH VALID MODELS
@@ -52,8 +73,11 @@ export async function processTranscriptWithGemini(transcript) {
       if (!rawText) throw new Error("Empty response");
 
       console.log(`Success with model: ${model}`);
+      console.log("Raw AI Response:", rawText);
       const cleanJson = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-      return JSON.parse(cleanJson);
+      const parsedData = JSON.parse(cleanJson);
+      console.log("Extracted Patient Data:", parsedData);
+      return parsedData;
 
     } catch (e) {
       console.warn(`Network/Parse error on ${model}:`, e);

@@ -51,11 +51,12 @@ export const RecentCheckIns = ({ visits, isLoading }: RecentCheckInsProps) => {
                 <User className="w-8 h-8 text-black" />
                 <div>
                   <h3 className="text-2xl font-bold text-black">
-                    {visit.patient_data?.patient_name || 'Unknown Patient'}
+                    {visit.patient_data?.name || 'Name Not Captured'}
                   </h3>
-                  {visit.patient_data?.age && (
-                    <p className="text-lg text-black">Age: {visit.patient_data.age}</p>
-                  )}
+                  <div className="flex gap-4 text-lg text-black">
+                    {visit.patient_data?.age && <span>Age: {visit.patient_data.age}</span>}
+                    {visit.patient_data?.gender && <span>Gender: {visit.patient_data.gender}</span>}
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-2 text-black">
@@ -64,29 +65,32 @@ export const RecentCheckIns = ({ visits, isLoading }: RecentCheckInsProps) => {
               </div>
             </div>
 
-            {visit.symptoms_data?.symptoms && visit.symptoms_data.symptoms.length > 0 && (
+            {visit.symptoms_data?.primary_symptom && (
               <div className="mb-4">
                 <div className="flex items-center gap-2 mb-2">
                   <Activity className="w-6 h-6 text-black" />
-                  <h4 className="text-xl font-bold text-black">Symptoms:</h4>
+                  <h4 className="text-xl font-bold text-black">Primary Symptom:</h4>
                 </div>
-                <ul className="list-disc list-inside pl-8">
-                  {visit.symptoms_data.symptoms.map((symptom, index) => (
-                    <li key={index} className="text-lg text-black">
-                      {symptom}
-                    </li>
-                  ))}
-                </ul>
+                <p className="text-lg text-black pl-8">{visit.symptoms_data.primary_symptom}</p>
               </div>
             )}
 
-            {visit.symptoms_data?.duration && (
-              <div className="mb-4">
-                <p className="text-lg text-black">
-                  <span className="font-bold">Duration:</span> {visit.symptoms_data.duration}
-                </p>
-              </div>
-            )}
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              {visit.symptoms_data?.duration && (
+                <div>
+                  <p className="text-lg text-black">
+                    <span className="font-bold">Duration:</span> {visit.symptoms_data.duration}
+                  </p>
+                </div>
+              )}
+              {visit.symptoms_data?.severity && (
+                <div>
+                  <p className="text-lg text-black">
+                    <span className="font-bold">Severity:</span> {visit.symptoms_data.severity}
+                  </p>
+                </div>
+              )}
+            </div>
 
             <div className="mt-4 pt-4 border-t-2 border-black">
               <p className="text-lg font-bold text-black mb-2">Transcript:</p>

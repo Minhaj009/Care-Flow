@@ -14,9 +14,14 @@ export const RecordingInterface = ({ onTranscriptComplete, isProcessing }: Recor
     if (isRecording) {
       stopRecording();
       if (transcript.trim()) {
+        console.log("=== RECORDING STOPPED ===");
+        console.log("Final Transcript:", transcript.trim());
         onTranscriptComplete(transcript.trim());
+      } else {
+        console.log("No transcript captured");
       }
     } else {
+      console.log("=== RECORDING STARTED ===");
       startRecording();
     }
   };
