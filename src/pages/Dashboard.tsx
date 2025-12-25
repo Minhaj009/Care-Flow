@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { DashboardHeader } from '../components/DashboardHeader';
 import { RecordingInterface } from '../components/RecordingInterface';
 import { RecentCheckIns } from '../components/RecentCheckIns';
-import { extractPatientData } from '../services/geminiService';
+import { processTranscriptWithGemini } from '../services/geminiService';
 import { savePatientVisit, getRecentVisits, deletePatientVisit } from '../services/databaseService';
 import { PatientVisit } from '../types';
 import { supabase } from '../lib/supabase';
@@ -86,7 +86,7 @@ export const Dashboard = () => {
     console.log("Transcript received:", transcript);
 
     try {
-      const aiJson = await extractPatientData(transcript);
+      const aiJson = await processTranscriptWithGemini(transcript);
       console.log("AI Extracted Data:", aiJson);
 
       await savePatientVisit(transcript, aiJson, user.id);

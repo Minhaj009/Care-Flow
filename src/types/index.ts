@@ -5,17 +5,27 @@ export interface ExtractedPatientData {
   duration: string | null;
 }
 
+export interface Symptom {
+  name: string;
+  severity?: string;
+}
+
 export interface PatientVisit {
   id: string;
   created_at: string;
   raw_transcript: string;
   patient_data: {
+    name?: string | null;
     patient_name?: string | null;
     age?: string | null;
+    gender?: string | null;
   };
   symptoms_data: {
-    symptoms?: string[] | null;
-    duration?: string | null;
+    symptoms?: Symptom[] | null;
+    primary_symptom?: string;
+    severity?: string;
+    duration?: string;
+    additional_notes?: string;
   };
 }
 
