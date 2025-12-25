@@ -22,14 +22,14 @@ import { getAppointments, updateAppointment, getHealthcareProvider } from '../se
 import { searchPatients } from '../services/databaseService';
 import { Appointment, Patient } from '../types';
 import { supabase } from '../lib/supabase';
-import type { User } from '@supabase/supabase-js';
+import type { User as AuthUser } from '@supabase/supabase-js';
 
 type ViewMode = 'day' | 'week' | 'month';
 type FilterStatus = 'all' | 'Scheduled' | 'Confirmed' | 'Checked In' | 'Completed' | 'Cancelled';
 
 export const Appointments = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [filteredAppointments, setFilteredAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
