@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Building2, Phone, Mail, Lock, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
+import { User, Building2, Phone, Mail, Lock, CheckCircle, AlertCircle, ArrowLeft, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useProfile } from '../contexts/ProfileContext';
 import { DashboardHeader } from '../components/DashboardHeader';
@@ -19,10 +19,12 @@ export const Settings = () => {
 
   const [profileLoading, setProfileLoading] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [profileSuccess, setProfileSuccess] = useState(false);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -101,6 +103,35 @@ export const Settings = () => {
       setPasswordError(error.message || 'Failed to update password');
     } finally {
       setPasswordLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const confirmText = 'DELETE';
+    const userInput = window.prompt(
+      `This action cannot be undone. This will permanently delete your account, profile, and all patient data.\n\nType "${confirmText}" to confirm:`
+    );
+
+    if (userInput !== confirmText) {
+      if (userInput !== null) {
+        alert('Account deletion cancelled. Text did not match.');
+      }
+      return;
+    }
+
+    setDeleteLoading(true);
+    setDeleteError(null);
+
+    try {
+      const { error: rpcError } = await supabase.rpc('delete_user_account');
+
+      if (rpcError) throw rpcError;
+
+      await supabase.auth.signOut();
+      navigate('/');
+    } catch (error: any) {
+      setDeleteError(error.message || 'Failed to delete account');
+      setDeleteLoading(false);
     }
   };
 
@@ -271,6 +302,31 @@ export const Settings = () => {
                 {passwordLoading ? 'Updating...' : 'Update Password'}
               </button>
             </form>
+          </div>
+
+          <div className="bg-red-50 border-2 border-red-200 rounded-xl p-8">
+            <h2 className="text-xl font-bold text-red-900 mb-2 flex items-center gap-2">
+              <Trash2 className="w-5 h-5" />
+              Delete Account
+            </h2>
+            <p className="text-sm text-red-800 mb-6">
+              Once you delete your account, there is no going back. This will permanently delete your profile, all patient data, and remove all associated records. This action cannot be undone.
+            </p>
+
+            {deleteError && (
+              <div className="bg-red-100 border border-red-300 rounded-lg p-3 flex items-start gap-2 mb-4">
+                <AlertCircle className="w-5 h-5 text-red-700 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-red-900">{deleteError}</p>
+              </div>
+            )}
+
+            <button
+              onClick={handleDeleteAccount}
+              disabled={deleteLoading}
+              className="w-full bg-red-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              {deleteLoading ? 'Deleting Account...' : 'Delete My Account Permanently'}
+            </button>
           </div>
         </div>
       </main>
