@@ -2,91 +2,64 @@ export async function processTranscriptWithGemini(transcript) {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) throw new Error("Gemini API Key is missing");
 
-  console.log("=== PROCESSING TRANSCRIPT ===");
-  console.log("Raw Transcript:", transcript);
-  console.log("Transcript Length:", transcript.length);
-
-  // UPDATED: Matches your exact JSON inventory
-  // Priority: 2.5 Flash (Newest Free) -> 2.0 Flash (Stable Free) -> Generic Flash
+  // Models priority
   const modelsToTry = [
-    "gemini-2.5-flash",
+    "gemini-2.5-flash", 
     "gemini-2.0-flash",
     "gemini-flash-latest"
   ];
 
   const prompt = `
-    You are a medical data extraction system. Analyze this patient check-in transcript and extract structured data.
-
-    Transcript: "${transcript}"
-
-    CRITICAL: Look for the patient's NAME carefully. Common patterns include:
-    - "My name is [Name]"
-    - "I'm [Name]"
-    - "This is [Name]"
-    - Any mention of a person's name in the context of being the patient
-
-    Extract the following information into valid JSON format (no markdown, no code blocks):
-
+    You are an expert Medical Scribe for Pakistan.
+    Analyze this transcript: "${transcript}"
+    
+    CRITICAL TRANSLATION RULES (Roman Urdu -> English):
+    - "Ulti" / "Ubh-kai" -> Vomiting
+    - "Bukhar" / "Tapt" -> Fever
+    - "Dard" / "Pir" -> Pain
+    - "Chakar" -> Dizziness
+    - "Saans phoolna" -> Shortness of Breath
+    - "Pait" -> Stomach
+    
+    OUTPUT FORMAT (Strict JSON, No Markdown):
     {
-      "patient_data": {
-        "name": "patient's full name or null if not mentioned",
-        "age": "patient's age or null if not mentioned",
-        "gender": "male/female/other or null if not mentioned"
+      "patient_data": { 
+        "name": "string (Title Case)", 
+        "age": "string", 
+        "gender": "string" 
       },
-      "symptoms_data": {
-        "primary_symptom": "main symptom or null if not mentioned",
-        "duration": "how long they've had it or null if not mentioned",
-        "severity": "mild/moderate/severe or null if not mentioned"
-      }
+      "symptoms": [  
+        // EXTRACT ALL SYMPTOMS FOUND (Array)
+        { 
+          "name": "string (Standard Medical English)", 
+          "duration": "string (or null)", 
+          "severity": "string (Low/Medium/High)" 
+        }
+      ]
     }
-
-    Return ONLY the JSON object, nothing else.
   `;
 
-  // LOOP THROUGH VALID MODELS
   for (const model of modelsToTry) {
-    console.log(`Vector Protocol: Attempting model '${model}'...`);
-    
     try {
-      // Note: We use the exact model name from your list
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }]
-        })
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
       });
 
-      if (!response.ok) {
-        const err = await response.json();
-        console.warn(`Model ${model} failed:`, err.error?.message);
-        // If 404 or Quota limit, we simply try the next one
-        continue; 
-      }
+      if (!response.ok) continue;
 
-      // SUCCESS
       const data = await response.json();
       const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      
       if (!rawText) throw new Error("Empty response");
 
-      console.log(`Success with model: ${model}`);
-      console.log("Raw AI Response:", rawText);
       const cleanJson = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-      const parsedData = JSON.parse(cleanJson);
-      console.log("Extracted Patient Data:", parsedData);
-      return parsedData;
+      return JSON.parse(cleanJson);
 
     } catch (e) {
-      console.warn(`Network/Parse error on ${model}:`, e);
+      console.warn(`Model ${model} failed.`);
     }
   }
-
-  throw new Error("Vector Alert: All Flash models failed. Please check your Quota in Google AI Studio.");
-}
-
-export async function extractPatientData(transcript) {
-  return await processTranscriptWithGemini(transcript);
+  throw new Error("AI Extraction Failed.");
 }
