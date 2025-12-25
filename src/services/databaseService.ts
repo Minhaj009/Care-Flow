@@ -6,10 +6,13 @@ export const savePatientVisit = async (
   aiJson: any,
   receptionistId: string
 ): Promise<PatientVisit> => {
+  const patientData = aiJson.patient_data || {};
+  const symptomsData = aiJson.symptoms_data || [];
+
   console.log("Vector Protocol: Attempting to save to Supabase...", {
     raw_transcript: transcript,
-    patient_data: aiJson.patient_data,
-    symptoms_data: aiJson.symptoms_data,
+    patient_data: patientData,
+    symptoms_data: symptomsData,
     receptionist_id: receptionistId
   });
 
@@ -18,8 +21,8 @@ export const savePatientVisit = async (
     .insert([
       {
         raw_transcript: transcript,
-        patient_data: aiJson.patient_data,
-        symptoms_data: aiJson.symptoms_data,
+        patient_data: patientData,
+        symptoms_data: symptomsData,
         receptionist_id: receptionistId,
       }
     ])

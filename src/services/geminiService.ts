@@ -12,7 +12,7 @@ export async function processTranscriptWithGemini(transcript) {
   const prompt = `
     You are an expert Medical Scribe for Pakistan.
     Analyze this transcript: "${transcript}"
-    
+
     CRITICAL TRANSLATION RULES (Roman Urdu -> English):
     - "Ulti" / "Ubh-kai" -> Vomiting
     - "Bukhar" / "Tapt" -> Fever
@@ -20,20 +20,19 @@ export async function processTranscriptWithGemini(transcript) {
     - "Chakar" -> Dizziness
     - "Saans phoolna" -> Shortness of Breath
     - "Pait" -> Stomach
-    
+
     OUTPUT FORMAT (Strict JSON, No Markdown):
     {
-      "patient_data": { 
-        "name": "string (Title Case)", 
-        "age": "string", 
-        "gender": "string" 
+      "patient_data": {
+        "name": "string (Title Case)",
+        "age": "string",
+        "gender": "string"
       },
-      "symptoms": [  
-        // EXTRACT ALL SYMPTOMS FOUND (Array)
-        { 
-          "name": "string (Standard Medical English)", 
-          "duration": "string (or null)", 
-          "severity": "string (Low/Medium/High)" 
+      "symptoms_data": [
+        {
+          "name": "string (Standard Medical English)",
+          "duration": "string (or null)",
+          "severity": "string (Low/Medium/High)"
         }
       ]
     }
