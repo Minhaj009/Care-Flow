@@ -1,13 +1,31 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { LogIn, UserPlus, AlertCircle, Stethoscope } from 'lucide-react';
+import { LogIn, UserPlus, AlertCircle, Activity, CheckCircle } from 'lucide-react';
 
 export const Auth = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const mode = searchParams.get('mode');
+    if (mode === 'signup') {
+      setIsLogin(false);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        navigate('/dashboard');
+      }
+    });
+  }, [navigate]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,12 +39,14 @@ export const Auth = () => {
           password,
         });
         if (error) throw error;
+        navigate('/dashboard');
       } else {
         const { error } = await supabase.auth.signUp({
           email,
           password,
         });
         if (error) throw error;
+        navigate('/dashboard');
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred');
@@ -40,13 +60,13 @@ export const Auth = () => {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4">
-            <Stethoscope className="w-8 h-8 text-white" />
+            <Activity className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">
-            Medical Voice Recorder
+            Welcome to Clinical Flows
           </h1>
           <p className="text-slate-600">
-            AI-powered patient check-in system
+            Join the fastest-growing network of digital clinics in Punjab
           </p>
         </div>
 
@@ -166,9 +186,20 @@ export const Auth = () => {
           )}
         </div>
 
-        <p className="mt-6 text-center text-xs text-slate-500">
-          Secure authentication powered by Supabase
-        </p>
+        <div className="mt-6 space-y-2">
+          <div className="flex items-center justify-center gap-2 text-sm text-slate-600">
+            <CheckCircle className="w-4 h-4 text-green-600" />
+            <span>Free for Private Clinics</span>
+          </div>
+          <div className="flex items-center justify-center gap-2 text-sm text-slate-600">
+            <CheckCircle className="w-4 h-4 text-green-600" />
+            <span>No Credit Card Required</span>
+          </div>
+          <div className="flex items-center justify-center gap-2 text-sm text-slate-600">
+            <CheckCircle className="w-4 h-4 text-green-600" />
+            <span>Secure Data Encryption</span>
+          </div>
+        </div>
       </div>
     </div>
   );
