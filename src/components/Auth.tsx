@@ -9,6 +9,9 @@ export const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [clinicName, setClinicName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,11 +44,25 @@ export const Auth = () => {
         if (error) throw error;
         navigate('/dashboard');
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
         });
         if (error) throw error;
+
+        if (data.user) {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert({
+              id: data.user.id,
+              full_name: fullName,
+              clinic_name: clinicName,
+              phone_number: phoneNumber,
+            });
+
+          if (profileError) throw profileError;
+        }
+
         navigate('/dashboard');
       }
     } catch (err: any) {
@@ -103,6 +120,64 @@ export const Auth = () => {
           </div>
 
           <form onSubmit={handleAuth} className="space-y-4">
+            {!isLogin && (
+              <>
+                <div>
+                  <label
+                    htmlFor="fullName"
+                    className="block text-sm font-semibold text-slate-700 mb-2"
+                  >
+                    Full Name
+                  </label>
+                  <input
+                    id="fullName"
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    placeholder="Dr. Ahmed Khan"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="clinicName"
+                    className="block text-sm font-semibold text-slate-700 mb-2"
+                  >
+                    Clinic Name
+                  </label>
+                  <input
+                    id="clinicName"
+                    type="text"
+                    value={clinicName}
+                    onChange={(e) => setClinicName(e.target.value)}
+                    required
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    placeholder="City Medical Center"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="phoneNumber"
+                    className="block text-sm font-semibold text-slate-700 mb-2"
+                  >
+                    Phone Number
+                  </label>
+                  <input
+                    id="phoneNumber"
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    required
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    placeholder="+92 300 1234567"
+                  />
+                </div>
+              </>
+            )}
+
             <div>
               <label
                 htmlFor="email"

@@ -1,31 +1,25 @@
 import { useState, useEffect } from 'react';
-import { Stethoscope, CheckCircle, LogOut, User as UserIcon } from 'lucide-react';
+import { CheckCircle, AlertCircle, Building2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { DashboardHeader } from '../components/DashboardHeader';
 import { RecordingInterface } from '../components/RecordingInterface';
 import { RecentCheckIns } from '../components/RecentCheckIns';
 import { extractPatientData } from '../services/geminiService';
 import { savePatientVisit, getRecentVisits, deletePatientVisit } from '../services/databaseService';
 import { PatientVisit } from '../types';
 import { supabase } from '../lib/supabase';
+import { useProfile } from '../contexts/ProfileContext';
 import type { User } from '@supabase/supabase-js';
 
 export const Dashboard = () => {
   const navigate = useNavigate();
+  const { profile } = useProfile();
   const [user, setUser] = useState<User | null>(null);
   const [visits, setVisits] = useState<PatientVisit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  const geminiKey = import.meta.env.VITE_GEMINI_API_KEY;
-
-  console.log("=== ENVIRONMENT CHECK ===");
-  console.log("Supabase URL present:", !!supabaseUrl);
-  console.log("Supabase Key present:", !!supabaseKey);
-  console.log("Gemini Key present:", !!geminiKey);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -66,12 +60,6 @@ export const Dashboard = () => {
     }
   }, [user]);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setVisits([]);
-    navigate('/auth');
-  };
-
   const handleDeleteVisit = async (visitId: string) => {
     setVisits((prev) => prev.filter((v) => v.id !== visitId));
 
@@ -81,48 +69,6 @@ export const Dashboard = () => {
       console.error('Error deleting visit:', error);
       setErrorMessage(error instanceof Error ? error.message : 'Failed to delete visit');
       await loadRecentVisits();
-    }
-  };
-
-  const testConnection = async () => {
-    console.log("=== TESTING SUPABASE CONNECTION ===");
-
-    if (!supabaseUrl || !supabaseKey) {
-      alert("CRITICAL ERROR: Supabase Keys are MISSING in .env file!");
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('patient_visits')
-        .select('id')
-        .limit(1);
-
-      if (error) {
-        console.error("Connection Test Failed:", error);
-        alert(`Connection Failed: ${error.message}`);
-      } else {
-        console.log("Connection Test Success:", data);
-        alert("SUCCESS: Supabase connection is working!");
-      }
-    } catch (err) {
-      console.error("Connection Test Error:", err);
-      alert(`Connection Error: ${err}`);
-    }
-  };
-
-  const testAIExtraction = async () => {
-    console.log("=== TESTING AI EXTRACTION ===");
-
-    const testTranscript = "My name is John Smith. I am 35 years old. I have a severe headache for the past 3 days.";
-
-    try {
-      const result = await extractPatientData(testTranscript);
-      console.log("AI Extraction Result:", result);
-      alert(`AI Test Success!\nName: ${result.patient_data?.name}\nAge: ${result.patient_data?.age}\nSymptom: ${result.symptoms_data?.primary_symptom}`);
-    } catch (err) {
-      console.error("AI Extraction Failed:", err);
-      alert(`AI Test Failed: ${err}`);
     }
   };
 
@@ -166,66 +112,48 @@ export const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <header className="bg-black text-white py-8 border-b-4 border-black">
-        <div className="max-w-4xl mx-auto px-8">
-          <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-slate-50">
+      <DashboardHeader />
+
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-3">
+            <Building2 className="w-8 h-8 text-blue-600" />
             <div>
-              <div className="flex items-center gap-4">
-                <Stethoscope className="w-12 h-12" />
-                <h1 className="text-4xl font-bold">Voice Check-in System</h1>
-              </div>
-              <p className="text-xl mt-2">Medical Clinic Patient Registration</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 px-3 py-2 bg-white/10 rounded-lg">
-                <UserIcon className="w-4 h-4" />
-                <span className="text-sm">{user.email}</span>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="bg-white text-black px-4 py-2 border-2 border-white font-bold hover:bg-gray-100 flex items-center gap-2"
-              >
-                <LogOut className="w-4 h-4" />
-                Logout
-              </button>
+              <h1 className="text-3xl font-bold text-slate-900">Patient Check-in</h1>
+              <p className="text-slate-600 mt-1">
+                Clinic: <span className="font-semibold text-slate-900">{profile?.clinic_name || 'Loading...'}</span>
+              </p>
             </div>
           </div>
         </div>
-      </header>
 
-      <main className="py-8">
         {successMessage && (
-          <div className="max-w-4xl mx-auto px-8 mb-6">
-            <div className="bg-white border-4 border-black p-6 flex items-center gap-4">
-              <CheckCircle className="w-8 h-8 text-black" />
-              <p className="text-xl font-bold text-black">{successMessage}</p>
+          <div className="mb-6">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3">
+              <CheckCircle className="w-5 h-5 text-green-600" />
+              <p className="text-sm font-medium text-green-800">{successMessage}</p>
             </div>
           </div>
         )}
 
         {errorMessage && (
-          <div className="max-w-4xl mx-auto px-8 mb-6">
-            <div className="bg-white border-4 border-black p-6">
-              <p className="text-xl font-bold text-black">Error: {errorMessage}</p>
+          <div className="mb-6">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <p className="text-sm font-medium text-red-800">{errorMessage}</p>
             </div>
           </div>
         )}
 
-        <RecordingInterface onTranscriptComplete={handleTranscriptComplete} isProcessing={isProcessing} />
-
-        <div className="my-12 max-w-4xl mx-auto px-8">
-          <div className="border-t-4 border-black"></div>
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-8 mb-8">
+          <RecordingInterface onTranscriptComplete={handleTranscriptComplete} isProcessing={isProcessing} />
         </div>
 
-        <RecentCheckIns visits={visits} isLoading={isLoading} onDelete={handleDeleteVisit} />
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-8">
+          <RecentCheckIns visits={visits} isLoading={isLoading} onDelete={handleDeleteVisit} />
+        </div>
       </main>
-
-      <footer className="bg-black text-white py-6 mt-12 border-t-4 border-black">
-        <div className="max-w-4xl mx-auto px-8 text-center">
-          <p className="text-lg">Voice-to-Data Patient Check-in System</p>
-        </div>
-      </footer>
     </div>
   );
 };
