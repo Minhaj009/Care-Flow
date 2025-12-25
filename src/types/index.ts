@@ -7,6 +7,7 @@ export interface ExtractedPatientData {
 
 export interface Symptom {
   name: string;
+  duration?: string | null;
   severity?: string;
 }
 
@@ -20,13 +21,7 @@ export interface PatientVisit {
     age?: string | null;
     gender?: string | null;
   };
-  symptoms_data: {
-    symptoms?: Symptom[] | null;
-    primary_symptom?: string;
-    severity?: string;
-    duration?: string;
-    additional_notes?: string;
-  };
+  symptoms_data: Symptom[];
 }
 
 export interface RecordingState {

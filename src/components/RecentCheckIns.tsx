@@ -165,75 +165,41 @@ export const RecentCheckIns = ({ visits, isLoading, onDelete }: RecentCheckInsPr
                         </div>
                       </div>
 
-                      {(visit.symptoms_data?.symptoms || visit.symptoms_data?.primary_symptom) && (
+                      {Array.isArray(visit.symptoms_data) && visit.symptoms_data.length > 0 && (
                         <div className="pt-3 border-t border-slate-100">
                           <div className="flex items-center gap-2 mb-3">
                             <Activity className="w-4 h-4 text-slate-600" />
                             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                              {visit.symptoms_data.symptoms && visit.symptoms_data.symptoms.length > 1 ? 'Symptoms' : 'Symptom'}
+                              {visit.symptoms_data.length > 1 ? 'Symptoms' : 'Symptom'}
                             </span>
                           </div>
 
-                          {visit.symptoms_data.symptoms && Array.isArray(visit.symptoms_data.symptoms) ? (
-                            <div className="space-y-3">
-                              <div className="flex flex-wrap gap-2">
-                                {visit.symptoms_data.symptoms.map((symptom, index) => (
-                                  <div key={index} className="flex flex-col gap-1">
-                                    <span className="text-sm font-semibold text-slate-900">
-                                      {symptom.name}
+                          <div className="space-y-3">
+                            {visit.symptoms_data.map((symptom, index) => (
+                              <div key={index} className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                                <div className="flex items-start justify-between gap-3">
+                                  <span className="text-sm font-semibold text-slate-900 flex-1">
+                                    {symptom.name}
+                                  </span>
+                                  {symptom.severity && (
+                                    <span
+                                      className={`px-3 py-1 text-xs font-semibold rounded-full border ${getSeverityBadgeStyle(symptom.severity)}`}
+                                    >
+                                      {symptom.severity}
                                     </span>
-                                    {symptom.severity && (
-                                      <span
-                                        className={`px-3 py-1 text-xs font-semibold rounded-full border ${getSeverityBadgeStyle(symptom.severity)}`}
-                                      >
-                                        {symptom.severity}
-                                      </span>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                              {visit.symptoms_data.duration && (
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs text-slate-500">Duration:</span>
-                                  <span className="px-3 py-1 text-xs font-semibold rounded-full border bg-blue-50 text-blue-700 border-blue-200">
-                                    {visit.symptoms_data.duration}
-                                  </span>
+                                  )}
                                 </div>
-                              )}
-                              {visit.symptoms_data.additional_notes && (
-                                <p className="text-sm text-slate-600">
-                                  {visit.symptoms_data.additional_notes}
-                                </p>
-                              )}
-                            </div>
-                          ) : visit.symptoms_data.primary_symptom ? (
-                            <div className="space-y-2">
-                              <p className="text-base font-semibold text-slate-900">
-                                {visit.symptoms_data.primary_symptom}
-                              </p>
-                              <div className="flex flex-wrap gap-2">
-                                {visit.symptoms_data.severity && (
-                                  <span
-                                    className={`px-3 py-1 text-xs font-semibold rounded-full border ${getSeverityBadgeStyle(visit.symptoms_data.severity)}`}
-                                  >
-                                    {visit.symptoms_data.severity}
-                                  </span>
-                                )}
-                                {visit.symptoms_data.duration && (
-                                  <span className="px-3 py-1 text-xs font-semibold rounded-full border bg-blue-50 text-blue-700 border-blue-200">
-                                    {visit.symptoms_data.duration}
-                                  </span>
+                                {symptom.duration && (
+                                  <div className="mt-2 flex items-center gap-2">
+                                    <Clock className="w-3 h-3 text-slate-400" />
+                                    <span className="text-xs text-slate-600">
+                                      {symptom.duration}
+                                    </span>
+                                  </div>
                                 )}
                               </div>
-                              {visit.symptoms_data.additional_notes && (
-                                <p className="mt-2 text-sm text-slate-600">
-                                  {visit.symptoms_data.additional_notes}
-                                </p>
-                              )}
-                            </div>
-                          ) : (
-                            <p className="text-sm text-slate-500 italic">No symptoms recorded</p>
-                          )}
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>
