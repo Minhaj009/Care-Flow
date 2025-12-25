@@ -195,7 +195,8 @@ export const Dashboard = () => {
     notes: string,
     vitals?: any,
     tests?: any[],
-    medicines?: any[]
+    medicines?: any[],
+    nextVisit?: string
   ) => {
     if (!user) {
       setErrorMessage('You must be logged in to save patient check-ins');
@@ -225,7 +226,9 @@ export const Dashboard = () => {
         checkInData,
         user.id,
         selectedPatient.id,
-        'New Visit'
+        'New Visit',
+        undefined,
+        nextVisit
       );
 
       setLastSavedVisitId(visit.id);

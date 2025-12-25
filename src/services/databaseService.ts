@@ -14,7 +14,8 @@ export const savePatientVisit = async (
   receptionistId: string,
   patientId?: string,
   visitType?: string,
-  doctorName?: string
+  doctorName?: string,
+  nextVisit?: string
 ): Promise<PatientVisit> => {
   const patientData = aiJson.patient_data || {};
   const symptomsData = aiJson.symptoms_data || [];
@@ -44,6 +45,10 @@ export const savePatientVisit = async (
 
   if (doctorName) {
     visitData.doctor_name = doctorName;
+  }
+
+  if (nextVisit) {
+    visitData.next_visit = nextVisit;
   }
 
   const { data, error } = await supabase

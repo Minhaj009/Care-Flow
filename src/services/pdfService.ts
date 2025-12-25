@@ -88,6 +88,10 @@ export const generateVisitReportPDF = (visit: PatientVisit, patient: Patient | n
     doc.text(`Doctor: ${visit.doctor_name}`, margin, yPos);
     yPos += 6;
   }
+  if (visit.next_visit) {
+    doc.text(`Next Visit: ${new Date(visit.next_visit).toLocaleDateString()}`, margin, yPos);
+    yPos += 6;
+  }
 
   if (visit.vitals_data && Object.keys(visit.vitals_data).length > 0) {
     yPos += 5;

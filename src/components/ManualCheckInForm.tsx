@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Trash2, Save, Activity, TestTube, Pill } from 'lucide-react';
+import { Plus, Trash2, Save, Activity, TestTube, Pill, Calendar } from 'lucide-react';
 import { Patient, Symptom, PatientMedicalHistory } from '../types';
 
 interface VitalsData {
@@ -28,7 +28,7 @@ interface MedicineData {
 }
 
 interface ManualCheckInFormProps {
-  onSubmit: (patientData: any, symptoms: Symptom[], notes: string, vitals?: VitalsData, tests?: TestData[], medicines?: MedicineData[]) => void;
+  onSubmit: (patientData: any, symptoms: Symptom[], notes: string, vitals?: VitalsData, tests?: TestData[], medicines?: MedicineData[], nextVisit?: string) => void;
   isProcessing: boolean;
   selectedPatient: Patient;
   patientHistory: PatientMedicalHistory | null;
@@ -42,6 +42,7 @@ export const ManualCheckInForm = ({
 }: ManualCheckInFormProps) => {
   const [symptoms, setSymptoms] = useState<Symptom[]>([{ name: '', duration: '', severity: 'Mild' }]);
   const [notes, setNotes] = useState('');
+  const [nextVisit, setNextVisit] = useState('');
 
   const [vitals, setVitals] = useState<VitalsData>({
     bloodPressureSystolic: '',
@@ -131,10 +132,11 @@ export const ManualCheckInForm = ({
     const filteredTests = tests.filter(t => t.testName.trim() !== '');
     const filteredMedicines = medicines.filter(m => m.name.trim() !== '');
 
-    onSubmit(patientData, filteredSymptoms, notes, vitals, filteredTests, filteredMedicines);
+    onSubmit(patientData, filteredSymptoms, notes, vitals, filteredTests, filteredMedicines, nextVisit || undefined);
 
     setSymptoms([{ name: '', duration: '', severity: 'Mild' }]);
     setNotes('');
+    setNextVisit('');
     setVitals({
       bloodPressureSystolic: '',
       bloodPressureDiastolic: '',
@@ -550,6 +552,20 @@ export const ManualCheckInForm = ({
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Any additional observations, patient concerns, or relevant information..."
             rows={4}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+
+        <div>
+          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+            <Calendar className="w-4 h-4" />
+            Next Visit (Optional)
+          </label>
+          <input
+            type="date"
+            value={nextVisit}
+            onChange={(e) => setNextVisit(e.target.value)}
+            min={new Date().toISOString().split('T')[0]}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>

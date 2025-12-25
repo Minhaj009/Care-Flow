@@ -16,6 +16,7 @@ export interface PatientVisit {
   created_at: string;
   updated_at?: string;
   raw_transcript: string;
+  transcript?: string;
   patient_data: {
     name?: string | null;
     patient_name?: string | null;
@@ -23,11 +24,16 @@ export interface PatientVisit {
     gender?: string | null;
   };
   symptoms_data: Symptom[];
+  vitals_data?: any;
+  tests_data?: any[];
+  medicines_data?: any[];
+  diagnosis_summary?: string;
   patient_id?: string;
   visit_type?: string;
   doctor_name?: string;
   consultation_fee?: number;
   follow_up_date?: string;
+  next_visit?: string;
   visit_notes?: string;
   receptionist_id?: string;
 }
