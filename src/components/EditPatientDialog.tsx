@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
 import { PatientVisit, Symptom } from '../types';
+import { supabase } from '../lib/supabase';
 
 interface EditPatientDialogProps {
   visit: PatientVisit;
@@ -42,17 +43,47 @@ export const EditPatientDialog = ({ visit, isOpen, onClose, onSave }: EditPatien
   };
 
   const handleSave = async () => {
+    const formData = {
+      raw_transcript: rawTranscript,
+      patient_data: {
+        name: patientName || null,
+        age: patientAge || null,
+        gender: patientGender || null,
+      },
+      symptoms_data: symptoms,
+    };
+
+    console.log("Vector Debug: Attempting to save...", formData);
+    console.log("Vector Debug: Patient Visit ID:", visit.id);
+
+    if (!visit.id) {
+      alert("CRITICAL ERROR: Patient ID is missing. Cannot update.");
+      return;
+    }
+
     setIsSaving(true);
+
     try {
-      await onSave({
-        raw_transcript: rawTranscript,
-        patient_data: {
-          name: patientName || null,
-          age: patientAge || null,
-          gender: patientGender || null,
-        },
-        symptoms_data: symptoms,
-      });
+      const { data, error } = await supabase
+        .from('patient_visits')
+        .update({
+          raw_transcript: formData.raw_transcript,
+          patient_data: formData.patient_data,
+          symptoms_data: formData.symptoms_data
+        })
+        .eq('id', visit.id)
+        .select();
+
+      if (error) {
+        console.error("Supabase Update Error:", error);
+        alert(`Update Failed: ${error.message}`);
+        setIsSaving(false);
+        return;
+      }
+
+      console.log("Update Successful!", data);
+
+      await onSave(formData);
       onClose();
     } catch (error) {
       console.error('Error saving patient data:', error);
