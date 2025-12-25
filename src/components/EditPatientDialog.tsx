@@ -8,9 +8,10 @@ interface EditPatientDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (updatedVisit: Partial<PatientVisit>) => Promise<void>;
+  onRefresh?: () => void;
 }
 
-export const EditPatientDialog = ({ visit, isOpen, onClose, onSave }: EditPatientDialogProps) => {
+export const EditPatientDialog = ({ visit, isOpen, onClose, onSave, onRefresh }: EditPatientDialogProps) => {
   const [rawTranscript, setRawTranscript] = useState(visit.raw_transcript);
   const [patientName, setPatientName] = useState(visit.patient_data?.name || '');
   const [patientAge, setPatientAge] = useState(visit.patient_data?.age || '');
@@ -76,18 +77,30 @@ export const EditPatientDialog = ({ visit, isOpen, onClose, onSave }: EditPatien
 
       if (error) {
         console.error("Supabase Update Error:", error);
-        alert(`Update Failed: ${error.message}`);
+        alert(`Error: ${error.message}`);
         setIsSaving(false);
         return;
       }
 
-      console.log("Update Successful!", data);
+      if (data && data.length > 0) {
+        console.log("Update Success:", data[0]);
 
-      await onSave(formData);
-      onClose();
+        await onSave(formData);
+
+        if (onRefresh) {
+          onRefresh();
+        }
+
+        onClose();
+      } else {
+        console.warn("Update ran, but no data was returned. Possible RLS policy issue.");
+        alert("Update ran, but no data was returned. Check RLS policies.");
+        setIsSaving(false);
+      }
     } catch (error) {
       console.error('Error saving patient data:', error);
       alert('Failed to save changes. Please try again.');
+      setIsSaving(false);
     } finally {
       setIsSaving(false);
     }
