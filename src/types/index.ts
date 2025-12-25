@@ -36,6 +36,7 @@ export interface PatientVisit {
   next_visit?: string;
   visit_notes?: string;
   receptionist_id?: string;
+  facility_name?: string;
 }
 
 export interface RecordingState {
@@ -62,6 +63,7 @@ export interface Patient {
   emergency_contact_phone: string | null;
   photo_url: string | null;
   receptionist_id: string;
+  facility_name?: string;
   created_at: string;
   updated_at: string;
 }

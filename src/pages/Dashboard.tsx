@@ -230,7 +230,8 @@ export const Dashboard = () => {
         selectedPatient.id,
         'New Visit',
         undefined,
-        nextVisit
+        nextVisit,
+        profile?.clinic_name
       );
 
       setLastSavedVisitId(visit.id);
@@ -407,6 +408,7 @@ export const Dashboard = () => {
         onClose={() => setShowPatientRegistration(false)}
         onSuccess={handlePatientRegistered}
         receptionistId={user.id}
+        facilityName={profile?.clinic_name}
       />
 
       {selectedPatient && (

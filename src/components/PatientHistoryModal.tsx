@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { X, User, Activity, FileText, Heart, Upload, Download, Calendar, Clock, FileDown } from 'lucide-react';
+import { X, User, Activity, FileText, Heart, Upload, Download, Calendar, Clock, FileDown, Building2 } from 'lucide-react';
 import { Patient, PatientVisit, MedicalTest, VitalSigns, PatientMedicalHistory } from '../types';
 import {
   getPatientVisits,
   getMedicalTests,
   getVitalSigns,
-  getMedicalHistory
+  getMedicalHistory,
+  getPatientFacilities,
+  FacilityVisitSummary
 } from '../services/databaseService';
 import { getSignedUrl } from '../services/storageService';
 import { generateVisitReportPDF } from '../services/pdfService';
@@ -17,7 +19,7 @@ interface PatientHistoryModalProps {
   onUploadTests: () => void;
 }
 
-type TabType = 'visits' | 'tests' | 'vitals' | 'history';
+type TabType = 'visits' | 'tests' | 'vitals' | 'history' | 'facilities';
 
 export const PatientHistoryModal = ({ isOpen, onClose, patient, onUploadTests }: PatientHistoryModalProps) => {
   const [activeTab, setActiveTab] = useState<TabType>('visits');
@@ -25,6 +27,7 @@ export const PatientHistoryModal = ({ isOpen, onClose, patient, onUploadTests }:
   const [tests, setTests] = useState<MedicalTest[]>([]);
   const [vitalSigns, setVitalSigns] = useState<VitalSigns[]>([]);
   const [medicalHistory, setMedicalHistory] = useState<PatientMedicalHistory | null>(null);
+  const [facilities, setFacilities] = useState<FacilityVisitSummary[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -36,16 +39,18 @@ export const PatientHistoryModal = ({ isOpen, onClose, patient, onUploadTests }:
   const loadPatientData = async () => {
     setIsLoading(true);
     try {
-      const [visitsData, testsData, vitalsData, historyData] = await Promise.all([
+      const [visitsData, testsData, vitalsData, historyData, facilitiesData] = await Promise.all([
         getPatientVisits(patient.id),
         getMedicalTests(patient.id),
         getVitalSigns(patient.id),
-        getMedicalHistory(patient.id)
+        getMedicalHistory(patient.id),
+        getPatientFacilities(patient.id)
       ]);
       setVisits(visitsData);
       setTests(testsData);
       setVitalSigns(vitalsData);
       setMedicalHistory(historyData);
+      setFacilities(facilitiesData);
     } catch (error) {
       console.error('Failed to load patient data:', error);
     } finally {
@@ -154,6 +159,17 @@ export const PatientHistoryModal = ({ isOpen, onClose, patient, onUploadTests }:
               <Clock className="w-4 h-4" />
               Medical History
             </button>
+            <button
+              onClick={() => setActiveTab('facilities')}
+              className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
+                activeTab === 'facilities'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:bg-white hover:bg-opacity-50'
+              }`}
+            >
+              <Building2 className="w-4 h-4" />
+              Facilities ({facilities.length})
+            </button>
           </div>
         </div>
 
@@ -177,9 +193,17 @@ export const PatientHistoryModal = ({ isOpen, onClose, patient, onUploadTests }:
                       <div key={visit.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                         <div className="flex justify-between items-start mb-3">
                           <div>
-                            <span className="text-sm font-semibold text-blue-600">
-                              {visit.visit_type || 'Visit'}
-                            </span>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-semibold text-blue-600">
+                                {visit.visit_type || 'Visit'}
+                              </span>
+                              {visit.facility_name && (
+                                <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 bg-teal-100 text-teal-800 rounded-full">
+                                  <Building2 className="w-3 h-3" />
+                                  {visit.facility_name}
+                                </span>
+                              )}
+                            </div>
                             <p className="text-xs text-gray-500 mt-1">
                               {formatDate(visit.created_at)}
                             </p>
@@ -495,6 +519,62 @@ export const PatientHistoryModal = ({ isOpen, onClose, patient, onUploadTests }:
                         </div>
                       )}
                     </>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'facilities' && (
+                <div className="space-y-4">
+                  {patient.facility_name && (
+                    <div className="bg-blue-50 rounded-lg p-4 border border-blue-200 mb-6">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Building2 className="w-5 h-5 text-blue-600" />
+                        <h4 className="font-semibold text-blue-900">Registered At</h4>
+                      </div>
+                      <p className="text-blue-800">{patient.facility_name}</p>
+                      <p className="text-xs text-blue-600 mt-1">
+                        Registered on {new Date(patient.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  )}
+
+                  <h4 className="font-semibold text-gray-900 mb-3">Healthcare Facilities Visited</h4>
+
+                  {facilities.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500">
+                      <Building2 className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                      <p>No facility records found</p>
+                      <p className="text-sm mt-2">Visit records will show which facilities the patient has been seen at.</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {facilities.map((facility, idx) => (
+                        <div key={idx} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+                                <Building2 className="w-5 h-5 text-teal-600" />
+                              </div>
+                              <div>
+                                <h5 className="font-semibold text-gray-900">{facility.facility_name}</h5>
+                                <p className="text-sm text-gray-600">
+                                  {facility.visit_count} visit{facility.visit_count !== 1 ? 's' : ''}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="mt-3 pt-3 border-t border-gray-200">
+                            <p className="text-xs text-gray-500">
+                              Last visited: {new Date(facility.last_visit).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
               )}

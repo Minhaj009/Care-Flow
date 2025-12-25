@@ -15,7 +15,8 @@ export const savePatientVisit = async (
   patientId?: string,
   visitType?: string,
   doctorName?: string,
-  nextVisit?: string
+  nextVisit?: string,
+  facilityName?: string
 ): Promise<PatientVisit> => {
   const patientData = aiJson.patient_data || {};
   const symptomsData = aiJson.symptoms_data || [];
@@ -49,6 +50,10 @@ export const savePatientVisit = async (
 
   if (nextVisit) {
     visitData.next_visit = nextVisit;
+  }
+
+  if (facilityName) {
+    visitData.facility_name = facilityName;
   }
 
   const { data, error } = await supabase
@@ -130,11 +135,17 @@ export const deletePatientVisit = async (visitId: string): Promise<void> => {
 
 export const createPatient = async (
   patientData: Partial<Patient>,
-  receptionistId: string
+  receptionistId: string,
+  facilityName?: string
 ): Promise<Patient> => {
+  const insertData: any = { ...patientData, receptionist_id: receptionistId };
+  if (facilityName) {
+    insertData.facility_name = facilityName;
+  }
+
   const { data, error } = await supabase
     .from('patients')
-    .insert([{ ...patientData, receptionist_id: receptionistId }])
+    .insert([insertData])
     .select()
     .single();
 
@@ -392,4 +403,22 @@ export const getPatientVisits = async (patientId: string): Promise<PatientVisit[
   }
 
   return (data as PatientVisit[]) || [];
+};
+
+export interface FacilityVisitSummary {
+  facility_name: string;
+  visit_count: number;
+  last_visit: string;
+}
+
+export const getPatientFacilities = async (patientId: string): Promise<FacilityVisitSummary[]> => {
+  const { data, error } = await supabase
+    .rpc('get_patient_facilities', { p_patient_id: patientId });
+
+  if (error) {
+    console.error('Failed to fetch patient facilities:', error);
+    return [];
+  }
+
+  return (data as FacilityVisitSummary[]) || [];
 };

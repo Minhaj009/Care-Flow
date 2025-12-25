@@ -8,13 +8,15 @@ interface PatientRegistrationModalProps {
   onClose: () => void;
   onSuccess: (patient: Patient) => void;
   receptionistId: string;
+  facilityName?: string;
 }
 
 export default function PatientRegistrationModal({
   isOpen,
   onClose,
   onSuccess,
-  receptionistId
+  receptionistId,
+  facilityName
 }: PatientRegistrationModalProps) {
   const [currentSection, setCurrentSection] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -90,7 +92,7 @@ export default function PatientRegistrationModal({
         emergency_contact_phone: formData.emergency_contact_phone || null,
       };
 
-      const newPatient = await createPatient(patientData, receptionistId);
+      const newPatient = await createPatient(patientData, receptionistId, facilityName);
 
       if (allergies.length > 0 || chronicConditions.length > 0 || medications.length > 0 || surgeries.length > 0 || familyHistory) {
         await createOrUpdateMedicalHistory(newPatient.id, {

@@ -11,7 +11,8 @@ import {
   MapPin,
   CreditCard,
   Filter,
-  X
+  X,
+  Building2
 } from 'lucide-react';
 import { DashboardHeader } from '../components/DashboardHeader';
 import PatientRegistrationModal from '../components/PatientRegistrationModal';
@@ -21,9 +22,11 @@ import { searchPatients, deletePatient } from '../services/databaseService';
 import { Patient } from '../types';
 import { supabase } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
+import { useProfile } from '../contexts/ProfileContext';
 
 export const Patients = () => {
   const navigate = useNavigate();
+  const { profile } = useProfile();
   const [user, setUser] = useState<User | null>(null);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
@@ -333,7 +336,7 @@ export const Patients = () => {
                           </div>
                           <div>
                             <div className="font-semibold text-slate-900">{patient.full_name}</div>
-                            <div className="flex items-center gap-2 mt-0.5">
+                            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                               {patient.cnic && (
                                 <span className="text-xs text-slate-600 flex items-center gap-1">
                                   <CreditCard className="w-3 h-3" />
@@ -343,6 +346,12 @@ export const Patients = () => {
                               {patient.gender && (
                                 <span className="inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-slate-100 text-slate-700">
                                   {patient.gender}
+                                </span>
+                              )}
+                              {patient.facility_name && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-teal-50 text-teal-700">
+                                  <Building2 className="w-3 h-3" />
+                                  {patient.facility_name}
                                 </span>
                               )}
                             </div>
@@ -418,6 +427,7 @@ export const Patients = () => {
         onClose={() => setShowRegistrationModal(false)}
         onSuccess={handlePatientRegistered}
         receptionistId={user.id}
+        facilityName={profile?.clinic_name}
       />
 
       {selectedPatient && (
