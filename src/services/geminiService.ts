@@ -8,12 +8,12 @@ export async function processTranscriptWithGemini(transcript) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${apiKey}`;
 
   const prompt = `
-    You are a medical data structure engine for the Global South. 
+    You are a medical data structure engine for the Global South.
     Analyze this transcript: "${transcript}"
-    
+
     Extract the following JSON strictly. Do not use Markdown formatting.
     If the text is in "Roman Urdu" or mixed English/Urdu, translate and standardize it.
-    
+
     Structure:
     {
       "patient_data": { "name": "string or null", "age": "string or null", "gender": "string or null" },
@@ -41,14 +41,25 @@ export async function processTranscriptWithGemini(transcript) {
 
     const data = await response.json();
     const rawText = data.candidates[0].content.parts[0].text;
-    
+
     // Aggressive cleanup to ensure pure JSON
     const cleanJson = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-    
+
     return JSON.parse(cleanJson);
 
   } catch (error) {
     console.error("Critical AI Failure:", error);
     throw error;
   }
+}
+
+export async function extractPatientData(transcript) {
+  const result = await processTranscriptWithGemini(transcript);
+
+  return {
+    patient_name: result.patient_data?.name || null,
+    age: result.patient_data?.age || null,
+    symptoms: result.symptoms_data?.primary_symptom ? [result.symptoms_data.primary_symptom] : null,
+    duration: result.symptoms_data?.duration || null,
+  };
 }
