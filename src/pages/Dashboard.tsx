@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle, AlertCircle, Building2, UserPlus, FileText, History } from 'lucide-react';
+import { CheckCircle, AlertCircle, Building2, UserPlus, FileText, History, LayoutDashboard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardHeader } from '../components/DashboardHeader';
 import { ManualCheckInForm } from '../components/ManualCheckInForm';
@@ -10,6 +10,7 @@ import PatientRegistrationModal from '../components/PatientRegistrationModal';
 import VitalSignsModal from '../components/VitalSignsModal';
 import { PatientHistoryModal } from '../components/PatientHistoryModal';
 import { MedicalTestUploadModal } from '../components/MedicalTestUploadModal';
+import { EHRDashboard } from '../components/EHRDashboard';
 import {
   savePatientVisit,
   getRecentVisits,
@@ -32,6 +33,7 @@ export const Dashboard = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [editingVisit, setEditingVisit] = useState<PatientVisit | null>(null);
+  const [activeTab, setActiveTab] = useState<'ehr' | 'checkin'>('ehr');
 
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [patientHistory, setPatientHistory] = useState<PatientMedicalHistory | null>(null);
@@ -257,14 +259,41 @@ export const Dashboard = () => {
 
       <main className="max-w-7xl mx-auto px-6 py-8">
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-3">
-            <Building2 className="w-8 h-8 text-blue-600" />
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900">Patient Check-in</h1>
-              <p className="text-slate-600 mt-1">
-                {profile?.facility_type || 'Clinic'}: <span className="font-semibold text-slate-900">{profile?.clinic_name || 'Loading...'}</span>
-              </p>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <Building2 className="w-8 h-8 text-blue-600" />
+              <div>
+                <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
+                <p className="text-slate-600 mt-1">
+                  {profile?.facility_type || 'Clinic'}: <span className="font-semibold text-slate-900">{profile?.clinic_name || 'Loading...'}</span>
+                </p>
+              </div>
             </div>
+          </div>
+
+          <div className="flex gap-2 bg-white rounded-lg p-1 shadow-sm border border-gray-200 w-fit">
+            <button
+              onClick={() => setActiveTab('ehr')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md font-semibold transition-all ${
+                activeTab === 'ehr'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              EHR Dashboard
+            </button>
+            <button
+              onClick={() => setActiveTab('checkin')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md font-semibold transition-all ${
+                activeTab === 'checkin'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <UserPlus className="w-4 h-4" />
+              Patient Check-in
+            </button>
           </div>
         </div>
 
@@ -286,16 +315,20 @@ export const Dashboard = () => {
           </div>
         )}
 
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-8 mb-8">
-          {!selectedPatient ? (
-            <div className="text-center py-12">
-              <UserPlus className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Select a Patient to Continue</h3>
-              <p className="text-gray-600 mb-6">
-                Search for an existing patient or register a new one to start the check-in process
-              </p>
-              <button
-                onClick={() => setShowPatientSearch(true)}
+        {activeTab === 'ehr' && <EHRDashboard />}
+
+        {activeTab === 'checkin' && (
+          <>
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-8 mb-8">
+              {!selectedPatient ? (
+                <div className="text-center py-12">
+                  <UserPlus className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Select a Patient to Continue</h3>
+                  <p className="text-gray-600 mb-6">
+                    Search for an existing patient or register a new one to start the check-in process
+                  </p>
+                  <button
+                    onClick={() => setShowPatientSearch(true)}
                 className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
               >
                 Select Patient
@@ -348,6 +381,8 @@ export const Dashboard = () => {
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-8">
           <RecentCheckIns visits={visits} isLoading={isLoading} onDelete={handleDeleteVisit} onEdit={handleEditVisit} />
         </div>
+          </>
+        )}
       </main>
 
       {editingVisit && (

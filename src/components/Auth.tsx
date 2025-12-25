@@ -13,6 +13,8 @@ export const Auth = () => {
   const [clinicName, setClinicName] = useState('');
   const [facilityType, setFacilityType] = useState('Clinic');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [userRole, setUserRole] = useState('Receptionist');
+  const [specialty, setSpecialty] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,6 +54,19 @@ export const Auth = () => {
         if (error) throw error;
 
         if (data.user) {
+          const { data: org, error: orgError } = await supabase
+            .from('organizations')
+            .insert({
+              name: clinicName,
+              organization_type: facilityType,
+              phone: phoneNumber,
+              is_active: true,
+            })
+            .select()
+            .single();
+
+          if (orgError) throw orgError;
+
           const { error: profileError } = await supabase
             .from('profiles')
             .insert({
@@ -63,6 +78,38 @@ export const Auth = () => {
             });
 
           if (profileError) throw profileError;
+
+          if (userRole !== 'Receptionist' && org) {
+            const { data: provider, error: providerError } = await supabase
+              .from('healthcare_providers')
+              .insert({
+                user_id: data.user.id,
+                organization_id: org.id,
+                provider_type: userRole,
+                specialty: specialty || null,
+                accepting_new_patients: true,
+                is_active: true,
+              })
+              .select()
+              .single();
+
+            if (providerError) throw providerError;
+          }
+
+          const { data: roleData } = await supabase
+            .from('roles')
+            .select('id')
+            .eq('name', userRole)
+            .single();
+
+          if (roleData && org) {
+            await supabase.from('user_roles').insert({
+              user_id: data.user.id,
+              role_id: roleData.id,
+              organization_id: org.id,
+              is_active: true,
+            });
+          }
         }
 
         navigate('/dashboard');
@@ -197,6 +244,48 @@ export const Auth = () => {
                     placeholder="+92 300 1234567"
                   />
                 </div>
+
+                <div>
+                  <label
+                    htmlFor="userRole"
+                    className="block text-sm font-semibold text-slate-700 mb-2"
+                  >
+                    Your Role
+                  </label>
+                  <select
+                    id="userRole"
+                    value={userRole}
+                    onChange={(e) => setUserRole(e.target.value)}
+                    required
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
+                  >
+                    <option value="Receptionist">Receptionist / Front Desk</option>
+                    <option value="Doctor">Doctor / Physician</option>
+                    <option value="Nurse">Nurse</option>
+                    <option value="Lab Technician">Lab Technician</option>
+                    <option value="Pharmacist">Pharmacist</option>
+                    <option value="Radiologist">Radiologist</option>
+                  </select>
+                </div>
+
+                {(userRole === 'Doctor' || userRole === 'Radiologist') && (
+                  <div>
+                    <label
+                      htmlFor="specialty"
+                      className="block text-sm font-semibold text-slate-700 mb-2"
+                    >
+                      Specialty (Optional)
+                    </label>
+                    <input
+                      id="specialty"
+                      type="text"
+                      value={specialty}
+                      onChange={(e) => setSpecialty(e.target.value)}
+                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      placeholder="e.g., General Medicine, Cardiology"
+                    />
+                  </div>
+                )}
               </>
             )}
 
