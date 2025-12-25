@@ -259,7 +259,7 @@ export const Dashboard = () => {
             <div>
               <h1 className="text-3xl font-bold text-slate-900">Patient Check-in</h1>
               <p className="text-slate-600 mt-1">
-                Clinic: <span className="font-semibold text-slate-900">{profile?.clinic_name || 'Loading...'}</span>
+                {profile?.facility_type || 'Clinic'}: <span className="font-semibold text-slate-900">{profile?.clinic_name || 'Loading...'}</span>
               </p>
             </div>
           </div>
