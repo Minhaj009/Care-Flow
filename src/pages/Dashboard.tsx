@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { CheckCircle, AlertCircle, Building2, UserPlus, FileText, History } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardHeader } from '../components/DashboardHeader';
-import { RecordingInterface } from '../components/RecordingInterface';
+import { ManualCheckInForm } from '../components/ManualCheckInForm';
 import { RecentCheckIns } from '../components/RecentCheckIns';
 import { EditPatientVisitModal } from '../components/EditPatientVisitModal';
 import PatientSearchModal from '../components/PatientSearchModal';
@@ -10,7 +10,6 @@ import PatientRegistrationModal from '../components/PatientRegistrationModal';
 import VitalSignsModal from '../components/VitalSignsModal';
 import { PatientHistoryModal } from '../components/PatientHistoryModal';
 import { MedicalTestUploadModal } from '../components/MedicalTestUploadModal';
-import { processTranscriptWithGemini } from '../services/geminiService';
 import {
   savePatientVisit,
   getRecentVisits,
@@ -190,7 +189,7 @@ export const Dashboard = () => {
     setShowTestUpload(true);
   };
 
-  const handleTranscriptComplete = async (transcript: string) => {
+  const handleManualCheckIn = async (patientData: any, symptomsData: Symptom[], notes: string) => {
     if (!user) {
       setErrorMessage('You must be logged in to save patient check-ins');
       return;
@@ -205,21 +204,19 @@ export const Dashboard = () => {
     setSuccessMessage(null);
     setErrorMessage(null);
 
-    console.log("=== HANDLING TRANSCRIPT ===");
-    console.log("Transcript received:", transcript);
-
     try {
-      const aiJson = await processTranscriptWithGemini(transcript);
-      console.log("AI Extracted Data:", aiJson);
+      const checkInData = {
+        patient_data: patientData,
+        symptoms_data: symptomsData
+      };
 
       const visit = await savePatientVisit(
-        transcript,
-        aiJson,
+        notes || 'Manual check-in',
+        checkInData,
         user.id,
         selectedPatient.id,
         'New Visit'
       );
-      console.log("Saved to database successfully");
 
       setLastSavedVisitId(visit.id);
       setSuccessMessage('Patient check-in saved successfully!');
@@ -326,8 +323,8 @@ export const Dashboard = () => {
                   </button>
                 </div>
               </div>
-              <RecordingInterface
-                onTranscriptComplete={handleTranscriptComplete}
+              <ManualCheckInForm
+                onSubmit={handleManualCheckIn}
                 isProcessing={isProcessing}
                 selectedPatient={selectedPatient}
                 patientHistory={patientHistory}
