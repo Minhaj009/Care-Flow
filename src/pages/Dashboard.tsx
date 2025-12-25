@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle, AlertCircle, Building2, UserPlus } from 'lucide-react';
+import { CheckCircle, AlertCircle, Building2, UserPlus, FileText, History } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardHeader } from '../components/DashboardHeader';
 import { RecordingInterface } from '../components/RecordingInterface';
@@ -8,6 +8,8 @@ import { EditPatientVisitModal } from '../components/EditPatientVisitModal';
 import PatientSearchModal from '../components/PatientSearchModal';
 import PatientRegistrationModal from '../components/PatientRegistrationModal';
 import VitalSignsModal from '../components/VitalSignsModal';
+import { PatientHistoryModal } from '../components/PatientHistoryModal';
+import { MedicalTestUploadModal } from '../components/MedicalTestUploadModal';
 import { processTranscriptWithGemini } from '../services/geminiService';
 import {
   savePatientVisit,
@@ -37,6 +39,8 @@ export const Dashboard = () => {
   const [showPatientSearch, setShowPatientSearch] = useState(false);
   const [showPatientRegistration, setShowPatientRegistration] = useState(false);
   const [showVitalSigns, setShowVitalSigns] = useState(false);
+  const [showPatientHistory, setShowPatientHistory] = useState(false);
+  const [showTestUpload, setShowTestUpload] = useState(false);
   const [lastSavedVisitId, setLastSavedVisitId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -163,6 +167,29 @@ export const Dashboard = () => {
     setPatientHistory(null);
   };
 
+  const handleViewHistory = () => {
+    if (selectedPatient) {
+      setShowPatientHistory(true);
+    }
+  };
+
+  const handleUploadTests = () => {
+    if (selectedPatient) {
+      setShowTestUpload(true);
+    }
+  };
+
+  const handleTestUploadSuccess = () => {
+    setShowTestUpload(false);
+    setSuccessMessage('Test results uploaded successfully!');
+    setTimeout(() => setSuccessMessage(null), 5000);
+  };
+
+  const handleHistoryModalUploadTests = () => {
+    setShowPatientHistory(false);
+    setShowTestUpload(true);
+  };
+
   const handleTranscriptComplete = async (transcript: string) => {
     if (!user) {
       setErrorMessage('You must be logged in to save patient check-ins');
@@ -267,7 +294,7 @@ export const Dashboard = () => {
             </div>
           ) : (
             <div>
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex justify-between items-start mb-6">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">
                     Recording for: {selectedPatient.full_name}
@@ -276,12 +303,28 @@ export const Dashboard = () => {
                     {selectedPatient.cnic ? `CNIC: ${selectedPatient.cnic}` : 'Walk-in Patient'}
                   </p>
                 </div>
-                <button
-                  onClick={handleClearPatient}
-                  className="px-4 py-2 text-gray-700 border rounded-lg hover:bg-gray-50"
-                >
-                  Change Patient
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleViewHistory}
+                    className="flex items-center gap-2 px-4 py-2 text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100"
+                  >
+                    <History className="w-4 h-4" />
+                    View History
+                  </button>
+                  <button
+                    onClick={handleUploadTests}
+                    className="flex items-center gap-2 px-4 py-2 text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100"
+                  >
+                    <FileText className="w-4 h-4" />
+                    Upload Tests
+                  </button>
+                  <button
+                    onClick={handleClearPatient}
+                    className="px-4 py-2 text-gray-700 border rounded-lg hover:bg-gray-50"
+                  >
+                    Change Patient
+                  </button>
+                </div>
               </div>
               <RecordingInterface
                 onTranscriptComplete={handleTranscriptComplete}
@@ -330,6 +373,25 @@ export const Dashboard = () => {
           patientId={selectedPatient.id}
           visitId={lastSavedVisitId || undefined}
           measuredBy={user.id}
+        />
+      )}
+
+      {selectedPatient && (
+        <PatientHistoryModal
+          isOpen={showPatientHistory}
+          onClose={() => setShowPatientHistory(false)}
+          patient={selectedPatient}
+          onUploadTests={handleHistoryModalUploadTests}
+        />
+      )}
+
+      {selectedPatient && (
+        <MedicalTestUploadModal
+          isOpen={showTestUpload}
+          onClose={() => setShowTestUpload(false)}
+          patient={selectedPatient}
+          receptionistId={user.id}
+          onSuccess={handleTestUploadSuccess}
         />
       )}
     </div>
