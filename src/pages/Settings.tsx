@@ -12,6 +12,7 @@ export const Settings = () => {
 
   const [fullName, setFullName] = useState('');
   const [clinicName, setClinicName] = useState('');
+  const [facilityType, setFacilityType] = useState('Clinic');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -36,6 +37,7 @@ export const Settings = () => {
     if (profile) {
       setFullName(profile.full_name);
       setClinicName(profile.clinic_name);
+      setFacilityType(profile.facility_type);
       setPhoneNumber(profile.phone_number);
     }
   }, [profile]);
@@ -52,6 +54,7 @@ export const Settings = () => {
         .update({
           full_name: fullName,
           clinic_name: clinicName,
+          facility_type: facilityType,
           phone_number: phoneNumber,
           updated_at: new Date().toISOString(),
         })
@@ -177,7 +180,7 @@ export const Settings = () => {
               <div>
                 <label htmlFor="clinicName" className="block text-sm font-semibold text-slate-700 mb-2">
                   <Building2 className="w-4 h-4 inline mr-1" />
-                  Clinic Name
+                  Facility Name
                 </label>
                 <input
                   id="clinicName"
@@ -187,6 +190,24 @@ export const Settings = () => {
                   required
                   className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 />
+              </div>
+
+              <div>
+                <label htmlFor="facilityType" className="block text-sm font-semibold text-slate-700 mb-2">
+                  <Building2 className="w-4 h-4 inline mr-1" />
+                  Facility Type
+                </label>
+                <select
+                  id="facilityType"
+                  value={facilityType}
+                  onChange={(e) => setFacilityType(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
+                >
+                  <option value="Hospital">Hospital</option>
+                  <option value="Clinic">Clinic</option>
+                  <option value="RHC">RHC (Rural Health Center)</option>
+                </select>
               </div>
 
               <div>
