@@ -5,7 +5,7 @@ import { DashboardHeader } from '../components/DashboardHeader';
 import { RecordingInterface } from '../components/RecordingInterface';
 import { RecentCheckIns } from '../components/RecentCheckIns';
 import { processTranscriptWithGemini } from '../services/geminiService';
-import { savePatientVisit, getRecentVisits, deletePatientVisit, updatePatientVisit } from '../services/databaseService';
+import { savePatientVisit, getRecentVisits, deletePatientVisit } from '../services/databaseService';
 import { PatientVisit } from '../types';
 import { supabase } from '../lib/supabase';
 import { useProfile } from '../contexts/ProfileContext';
@@ -69,20 +69,6 @@ export const Dashboard = () => {
       console.error('Error deleting visit:', error);
       setErrorMessage(error instanceof Error ? error.message : 'Failed to delete visit');
       await loadRecentVisits();
-    }
-  };
-
-  const handleUpdateVisit = async (visitId: string, updatedData: Partial<PatientVisit>) => {
-    try {
-      const updatedVisit = await updatePatientVisit(visitId, updatedData);
-      setVisits((prev) => prev.map((v) => (v.id === visitId ? updatedVisit : v)));
-      setSuccessMessage('Patient record updated successfully!');
-      setTimeout(() => {
-        setSuccessMessage(null);
-      }, 5000);
-    } catch (error) {
-      console.error('Error updating visit:', error);
-      setErrorMessage(error instanceof Error ? error.message : 'Failed to update visit');
     }
   };
 
@@ -165,7 +151,7 @@ export const Dashboard = () => {
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-8">
-          <RecentCheckIns visits={visits} isLoading={isLoading} onDelete={handleDeleteVisit} onUpdate={handleUpdateVisit} />
+          <RecentCheckIns visits={visits} isLoading={isLoading} onDelete={handleDeleteVisit} />
         </div>
       </main>
     </div>
