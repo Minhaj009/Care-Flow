@@ -10,7 +10,8 @@ import {
   ClinicalAlert,
   EncounterNote,
   PatientInsurance,
-  BillingEncounter
+  BillingEncounter,
+  LabResult
 } from '../types';
 
 export const getUserRole = async (userId: string) => {
@@ -374,4 +375,209 @@ export const getDashboardStats = async (userId: string) => {
   stats.activePatients = patients?.length || 0;
 
   return stats;
+};
+
+export const updateReferral = async (id: string, updates: Partial<Referral>) => {
+  const { data, error } = await supabase
+    .from('referrals')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const getAllReferrals = async () => {
+  const { data, error } = await supabase
+    .from('referrals')
+    .select(`
+      *,
+      patient:patients(id, full_name, phone_number, cnic)
+    `)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data;
+};
+
+export const updateImmunization = async (id: string, updates: Partial<Immunization>) => {
+  const { data, error } = await supabase
+    .from('immunizations')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const getAllImmunizations = async () => {
+  const { data, error } = await supabase
+    .from('immunizations')
+    .select(`
+      *,
+      patient:patients(id, full_name, phone_number, date_of_birth)
+    `)
+    .order('administered_date', { ascending: false });
+
+  if (error) throw error;
+  return data;
+};
+
+export const updateEncounterNote = async (id: string, updates: Partial<EncounterNote>) => {
+  const { data, error } = await supabase
+    .from('encounter_notes')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const signEncounterNote = async (id: string, signedBy: string) => {
+  const { data, error } = await supabase
+    .from('encounter_notes')
+    .update({
+      is_signed: true,
+      status: 'Signed',
+      signed_by: signedBy,
+      signed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const getAllEncounterNotes = async () => {
+  const { data, error } = await supabase
+    .from('encounter_notes')
+    .select(`
+      *,
+      patient:patients(id, full_name, phone_number, cnic)
+    `)
+    .order('encounter_date', { ascending: false });
+
+  if (error) throw error;
+  return data;
+};
+
+export const getLabResults = async (patientId?: string) => {
+  let query = supabase
+    .from('lab_results')
+    .select(`
+      *,
+      patient:patients(id, full_name, phone_number, cnic)
+    `)
+    .order('result_date', { ascending: false });
+
+  if (patientId) {
+    query = query.eq('patient_id', patientId);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data;
+};
+
+export const createLabResult = async (labResult: Partial<LabResult>) => {
+  const { data, error } = await supabase
+    .from('lab_results')
+    .insert(labResult)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const updateLabResult = async (id: string, updates: Partial<LabResult>) => {
+  const { data, error } = await supabase
+    .from('lab_results')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const reviewLabResult = async (id: string, reviewedBy: string) => {
+  const { data, error } = await supabase
+    .from('lab_results')
+    .update({
+      is_reviewed: true,
+      reviewed_by: reviewedBy,
+      reviewed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const getLabResultTrends = async (patientId: string, testName: string) => {
+  const { data, error } = await supabase
+    .from('lab_results')
+    .select('result_value, result_date, interpretation')
+    .eq('patient_id', patientId)
+    .eq('test_name', testName)
+    .order('result_date', { ascending: true });
+
+  if (error) throw error;
+  return data;
+};
+
+export const getAbnormalLabResults = async () => {
+  const { data, error } = await supabase
+    .from('lab_results')
+    .select(`
+      *,
+      patient:patients(id, full_name, phone_number)
+    `)
+    .in('interpretation', ['Abnormal Low', 'Abnormal High', 'Critical Low', 'Critical High'])
+    .eq('is_reviewed', false)
+    .order('result_date', { ascending: false });
+
+  if (error) throw error;
+  return data;
+};
+
+export const getEnhancedDashboardStats = async (userId: string) => {
+  const baseStats = await getDashboardStats(userId);
+
+  const { data: pendingReferrals } = await supabase
+    .from('referrals')
+    .select('id', { count: 'exact' })
+    .in('status', ['Pending', 'Sent']);
+
+  const { data: unsignedNotes } = await supabase
+    .from('encounter_notes')
+    .select('id', { count: 'exact' })
+    .eq('is_signed', false);
+
+  const { data: abnormalLabs } = await supabase
+    .from('lab_results')
+    .select('id', { count: 'exact' })
+    .in('interpretation', ['Abnormal Low', 'Abnormal High', 'Critical Low', 'Critical High'])
+    .eq('is_reviewed', false);
+
+  return {
+    ...baseStats,
+    pendingReferrals: pendingReferrals?.length || 0,
+    unsignedNotes: unsignedNotes?.length || 0,
+    abnormalLabResults: abnormalLabs?.length || 0
+  };
 };

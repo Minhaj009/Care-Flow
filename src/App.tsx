@@ -10,6 +10,10 @@ import { Patients } from './pages/Patients';
 import { Appointments } from './pages/Appointments';
 import { ProblemList } from './pages/ProblemList';
 import { Medications } from './pages/Medications';
+import { Immunizations } from './pages/Immunizations';
+import { Referrals } from './pages/Referrals';
+import { EncounterNotes } from './pages/EncounterNotes';
+import { LabResults } from './pages/LabResults';
 import { Settings } from './pages/Settings';
 import { EHRInfo } from './pages/EHRInfo';
 import { ProfileProvider } from './contexts/ProfileContext';
@@ -61,6 +65,38 @@ function App() {
             element={
               <ProtectedRoute>
                 <Medications />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/immunizations"
+            element={
+              <ProtectedRoute>
+                <Immunizations />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/referrals"
+            element={
+              <ProtectedRoute>
+                <Referrals />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/encounter-notes"
+            element={
+              <ProtectedRoute>
+                <EncounterNotes />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/lab-results"
+            element={
+              <ProtectedRoute>
+                <LabResults />
               </ProtectedRoute>
             }
           />

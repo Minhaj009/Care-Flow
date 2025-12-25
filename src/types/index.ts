@@ -219,12 +219,23 @@ export interface EncounterNote {
   encounter_type: string;
   encounter_date: string;
   chief_complaint?: string;
+  history_of_present_illness?: string;
+  review_of_systems?: string;
   subjective?: string;
   objective?: string;
+  physical_exam?: Record<string, string>;
   assessment?: string;
   plan?: string;
+  diagnoses?: { code: string; description: string }[];
+  orders?: string[];
+  follow_up_instructions?: string;
+  status: 'Draft' | 'Signed' | 'Addendum';
+  signed_at?: string;
+  signed_by?: string;
   is_signed: boolean;
   created_at: string;
+  updated_at?: string;
+  patient?: Patient;
 }
 
 export interface Appointment {
@@ -261,22 +272,68 @@ export interface Referral {
   id: string;
   patient_id: string;
   referring_provider_id: string;
+  referral_type: 'Consultation' | 'Procedure' | 'Second Opinion' | 'Transfer of Care';
   referred_to_specialty?: string;
+  referred_to_facility?: string;
+  referred_to_provider?: string;
   reason_for_referral: string;
+  clinical_information?: string;
   priority: 'Routine' | 'Urgent' | 'Emergency';
-  status: 'Pending' | 'Scheduled' | 'Seen' | 'Completed' | 'Cancelled';
+  status: 'Pending' | 'Sent' | 'Scheduled' | 'Seen' | 'Report Received' | 'Completed' | 'Cancelled';
+  requested_timeframe?: string;
+  appointment_date?: string;
+  notes?: string;
+  status_history?: { status: string; date: string; notes?: string }[];
   created_at: string;
+  updated_at?: string;
+  patient?: Patient;
 }
 
 export interface Immunization {
   id: string;
   patient_id: string;
   vaccine_name: string;
+  cvx_code?: string;
+  manufacturer?: string;
+  lot_number: string;
+  expiration_date?: string;
+  dose_number?: number;
+  dose_series?: number;
+  administration_site?: 'Left Deltoid' | 'Right Deltoid' | 'Left Thigh' | 'Right Thigh' | 'Left Gluteal' | 'Right Gluteal' | 'Other';
+  route?: 'Intramuscular' | 'Subcutaneous' | 'Intradermal' | 'Oral' | 'Nasal' | 'Other';
   administered_date: string;
   administered_by: string;
-  dose_number?: number;
-  lot_number: string;
+  administered_by_name?: string;
+  adverse_reaction?: boolean;
+  adverse_reaction_details?: string;
+  notes?: string;
   created_at: string;
+  updated_at?: string;
+  patient?: Patient;
+}
+
+export interface LabResult {
+  id: string;
+  patient_id: string;
+  test_category: 'Chemistry' | 'Hematology' | 'Urinalysis' | 'Microbiology' | 'Immunology' | 'Coagulation' | 'Endocrine' | 'Other';
+  test_name: string;
+  test_code?: string;
+  result_value: string;
+  result_unit?: string;
+  reference_range_low?: string;
+  reference_range_high?: string;
+  interpretation: 'Normal' | 'Abnormal Low' | 'Abnormal High' | 'Critical Low' | 'Critical High' | 'Pending';
+  collection_date: string;
+  result_date: string;
+  ordering_provider?: string;
+  performing_lab?: string;
+  notes?: string;
+  is_reviewed: boolean;
+  reviewed_by?: string;
+  reviewed_at?: string;
+  created_at: string;
+  updated_at?: string;
+  patient?: Patient;
 }
 
 export interface ClinicalAlert {

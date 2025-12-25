@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, AlertTriangle, Users, Activity, Pill, FileText, TrendingUp, Clock } from 'lucide-react';
-import { getDashboardStats, getClinicalAlerts, getAppointments, getHealthcareProvider } from '../services/ehrService';
+import { Calendar, AlertTriangle, Users, Activity, Pill, FileText, TrendingUp, Clock, Syringe, Share2, FlaskConical } from 'lucide-react';
+import { getEnhancedDashboardStats, getClinicalAlerts, getAppointments, getHealthcareProvider } from '../services/ehrService';
 import { supabase } from '../lib/supabase';
 
 interface DashboardStats {
@@ -9,6 +9,9 @@ interface DashboardStats {
   pendingAlerts: number;
   activePatients: number;
   recentActivity: any[];
+  pendingReferrals: number;
+  unsignedNotes: number;
+  abnormalLabResults: number;
 }
 
 export const EHRDashboard = () => {
@@ -17,7 +20,10 @@ export const EHRDashboard = () => {
     todayAppointments: 0,
     pendingAlerts: 0,
     activePatients: 0,
-    recentActivity: []
+    recentActivity: [],
+    pendingReferrals: 0,
+    unsignedNotes: 0,
+    abnormalLabResults: 0
   });
   const [alerts, setAlerts] = useState<any[]>([]);
   const [upcomingAppointments, setUpcomingAppointments] = useState<any[]>([]);
@@ -50,7 +56,7 @@ export const EHRDashboard = () => {
         setProviderId(provider.id);
       }
 
-      const dashStats = await getDashboardStats(user.id);
+      const dashStats = await getEnhancedDashboardStats(user.id);
       setStats(dashStats);
 
       const alertsData = await getClinicalAlerts();
@@ -85,31 +91,47 @@ export const EHRDashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <StatCard
-          icon={<Calendar className="w-6 h-6" />}
+          icon={<Calendar className="w-5 h-5" />}
           title="Today's Appointments"
           value={stats.todayAppointments}
           color="blue"
+          onClick={() => navigate('/appointments')}
         />
         <StatCard
-          icon={<AlertTriangle className="w-6 h-6" />}
+          icon={<AlertTriangle className="w-5 h-5" />}
           title="Pending Alerts"
           value={stats.pendingAlerts}
           color="red"
         />
         <StatCard
-          icon={<Users className="w-6 h-6" />}
+          icon={<Users className="w-5 h-5" />}
           title="Active Patients"
           value={stats.activePatients}
           color="green"
+          onClick={() => navigate('/patients')}
         />
         <StatCard
-          icon={<Activity className="w-6 h-6" />}
-          title="System Status"
-          value="Operational"
-          color="purple"
-          isText
+          icon={<Share2 className="w-5 h-5" />}
+          title="Pending Referrals"
+          value={stats.pendingReferrals}
+          color="blue"
+          onClick={() => navigate('/referrals')}
+        />
+        <StatCard
+          icon={<FileText className="w-5 h-5" />}
+          title="Unsigned Notes"
+          value={stats.unsignedNotes}
+          color="yellow"
+          onClick={() => navigate('/encounter-notes')}
+        />
+        <StatCard
+          icon={<FlaskConical className="w-5 h-5" />}
+          title="Abnormal Labs"
+          value={stats.abnormalLabResults}
+          color="red"
+          onClick={() => navigate('/lab-results')}
         />
       </div>
 
@@ -214,33 +236,61 @@ export const EHRDashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
         <QuickActionCard
-          icon={<Calendar className="w-6 h-6" />}
+          icon={<Calendar className="w-5 h-5" />}
           title="Appointments"
           description="View & schedule"
           color="blue"
           onClick={() => navigate('/appointments')}
         />
         <QuickActionCard
-          icon={<Pill className="w-6 h-6" />}
+          icon={<FileText className="w-5 h-5" />}
+          title="Encounter Notes"
+          description="SOAP documentation"
+          color="emerald"
+          onClick={() => navigate('/encounter-notes')}
+        />
+        <QuickActionCard
+          icon={<Pill className="w-5 h-5" />}
           title="Medications"
           description="Prescribe & manage"
           color="green"
           onClick={() => navigate('/medications')}
         />
         <QuickActionCard
-          icon={<TrendingUp className="w-6 h-6" />}
+          icon={<FlaskConical className="w-5 h-5" />}
+          title="Lab Results"
+          description="Enter & review"
+          color="rose"
+          onClick={() => navigate('/lab-results')}
+        />
+        <QuickActionCard
+          icon={<Syringe className="w-5 h-5" />}
+          title="Immunizations"
+          description="Track vaccines"
+          color="teal"
+          onClick={() => navigate('/immunizations')}
+        />
+        <QuickActionCard
+          icon={<Share2 className="w-5 h-5" />}
+          title="Referrals"
+          description="Specialist consults"
+          color="indigo"
+          onClick={() => navigate('/referrals')}
+        />
+        <QuickActionCard
+          icon={<TrendingUp className="w-5 h-5" />}
           title="Problem List"
           description="Track diagnoses"
           color="orange"
           onClick={() => navigate('/problem-list')}
         />
         <QuickActionCard
-          icon={<Users className="w-6 h-6" />}
+          icon={<Users className="w-5 h-5" />}
           title="Patients"
           description="Manage records"
-          color="purple"
+          color="cyan"
           onClick={() => navigate('/patients')}
         />
       </div>
@@ -252,25 +302,29 @@ interface StatCardProps {
   icon: React.ReactNode;
   title: string;
   value: number | string;
-  color: 'blue' | 'red' | 'green' | 'purple';
+  color: 'blue' | 'red' | 'green' | 'yellow';
   isText?: boolean;
+  onClick?: () => void;
 }
 
-const StatCard = ({ icon, title, value, color, isText }: StatCardProps) => {
+const StatCard = ({ icon, title, value, color, isText, onClick }: StatCardProps) => {
   const colorClasses = {
     blue: 'bg-blue-100 text-blue-600',
     red: 'bg-red-100 text-red-600',
     green: 'bg-green-100 text-green-600',
-    purple: 'bg-purple-100 text-purple-600'
+    yellow: 'bg-yellow-100 text-yellow-600'
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-      <div className={`w-12 h-12 rounded-lg ${colorClasses[color]} flex items-center justify-center mb-4`}>
+    <div
+      className={`bg-white rounded-xl shadow-sm border border-gray-200 p-4 ${onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
+      onClick={onClick}
+    >
+      <div className={`w-10 h-10 rounded-lg ${colorClasses[color]} flex items-center justify-center mb-3`}>
         {icon}
       </div>
-      <p className="text-sm text-gray-600 mb-1">{title}</p>
-      <p className={`${isText ? 'text-2xl' : 'text-3xl'} font-bold text-gray-900`}>{value}</p>
+      <p className="text-xs text-gray-600 mb-1">{title}</p>
+      <p className={`${isText ? 'text-xl' : 'text-2xl'} font-bold text-gray-900`}>{value}</p>
     </div>
   );
 };
@@ -279,27 +333,31 @@ interface QuickActionCardProps {
   icon: React.ReactNode;
   title: string;
   description: string;
-  color: 'blue' | 'green' | 'purple' | 'orange';
+  color: 'blue' | 'green' | 'orange' | 'emerald' | 'rose' | 'teal' | 'indigo' | 'cyan';
   onClick?: () => void;
 }
 
 const QuickActionCard = ({ icon, title, description, color, onClick }: QuickActionCardProps) => {
-  const colorClasses = {
+  const colorClasses: Record<string, string> = {
     blue: 'from-blue-500 to-blue-600',
     green: 'from-green-500 to-green-600',
-    purple: 'from-purple-500 to-purple-600',
-    orange: 'from-orange-500 to-orange-600'
+    orange: 'from-orange-500 to-orange-600',
+    emerald: 'from-emerald-500 to-emerald-600',
+    rose: 'from-rose-500 to-rose-600',
+    teal: 'from-teal-500 to-teal-600',
+    indigo: 'from-indigo-500 to-indigo-600',
+    cyan: 'from-cyan-500 to-cyan-600'
   };
 
   return (
     <button
       onClick={onClick}
-      className={`bg-gradient-to-br ${colorClasses[color]} rounded-xl p-4 text-white hover:shadow-lg hover:scale-105 transition-all cursor-pointer`}
+      className={`bg-gradient-to-br ${colorClasses[color]} rounded-xl p-3 text-white hover:shadow-lg hover:scale-105 transition-all cursor-pointer`}
     >
       <div className="flex flex-col items-center text-center">
-        <div className="mb-2">{icon}</div>
-        <p className="font-semibold text-sm mb-1">{title}</p>
-        <p className="text-xs opacity-90">{description}</p>
+        <div className="mb-1">{icon}</div>
+        <p className="font-semibold text-xs mb-0.5">{title}</p>
+        <p className="text-xs opacity-90 leading-tight">{description}</p>
       </div>
     </button>
   );
