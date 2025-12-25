@@ -1,13 +1,18 @@
+import { useState } from 'react';
 import { PatientVisit } from '../types';
-import { Clock, User, Activity, ArrowRight, CheckCircle2, Trash2 } from 'lucide-react';
+import { Clock, User, Activity, ArrowRight, CheckCircle2, Trash2, Pencil } from 'lucide-react';
+import { EditPatientDialog } from './EditPatientDialog';
 
 interface RecentCheckInsProps {
   visits: PatientVisit[];
   isLoading: boolean;
   onDelete: (visitId: string) => void;
+  onUpdate: (visitId: string, updatedData: Partial<PatientVisit>) => Promise<void>;
 }
 
-export const RecentCheckIns = ({ visits, isLoading, onDelete }: RecentCheckInsProps) => {
+export const RecentCheckIns = ({ visits, isLoading, onDelete, onUpdate }: RecentCheckInsProps) => {
+  const [editingVisit, setEditingVisit] = useState<PatientVisit | null>(null);
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleString('en-US', {
@@ -100,13 +105,22 @@ export const RecentCheckIns = ({ visits, isLoading, onDelete }: RecentCheckInsPr
             key={visit.id}
             className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-lg transition-shadow duration-200 relative"
           >
-            <button
-              onClick={() => handleDelete(visit)}
-              className="absolute top-3 right-3 z-10 p-2 bg-white hover:bg-red-50 border border-slate-200 hover:border-red-300 rounded-lg transition-all group"
-              title="Delete this check-in"
-            >
-              <Trash2 className="w-4 h-4 text-slate-400 group-hover:text-red-600" />
-            </button>
+            <div className="absolute top-3 right-3 z-10 flex gap-2">
+              <button
+                onClick={() => setEditingVisit(visit)}
+                className="p-2 bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg transition-all group"
+                title="Edit this check-in"
+              >
+                <Pencil className="w-4 h-4 text-slate-400 group-hover:text-blue-600" />
+              </button>
+              <button
+                onClick={() => handleDelete(visit)}
+                className="p-2 bg-white hover:bg-red-50 border border-slate-200 hover:border-red-300 rounded-lg transition-all group"
+                title="Delete this check-in"
+              >
+                <Trash2 className="w-4 h-4 text-slate-400 group-hover:text-red-600" />
+              </button>
+            </div>
 
             <div className="grid lg:grid-cols-[1fr_auto_1fr] gap-0">
               <div className="bg-slate-50 p-6 border-b lg:border-b-0 lg:border-r border-slate-200">
@@ -214,6 +228,18 @@ export const RecentCheckIns = ({ visits, isLoading, onDelete }: RecentCheckInsPr
           </div>
         ))}
       </div>
+
+      {editingVisit && (
+        <EditPatientDialog
+          visit={editingVisit}
+          isOpen={true}
+          onClose={() => setEditingVisit(null)}
+          onSave={async (updatedData) => {
+            await onUpdate(editingVisit.id, updatedData);
+            setEditingVisit(null);
+          }}
+        />
+      )}
     </div>
   );
 };
