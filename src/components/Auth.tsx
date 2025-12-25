@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { LogIn, UserPlus, AlertCircle, Activity, CheckCircle } from 'lucide-react';
+import { LogIn, UserPlus, AlertCircle, Activity, CheckCircle, ArrowLeft } from 'lucide-react';
 
 export const Auth = () => {
   const navigate = useNavigate();
@@ -274,6 +274,16 @@ export const Auth = () => {
             <CheckCircle className="w-4 h-4 text-green-600" />
             <span>Secure Data Encryption</span>
           </div>
+        </div>
+
+        <div className="mt-6 text-center">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Home
+          </Link>
         </div>
       </div>
     </div>
