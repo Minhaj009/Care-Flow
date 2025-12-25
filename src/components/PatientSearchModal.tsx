@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Search, X, UserPlus, User } from 'lucide-react';
+import { Search, X, UserPlus, User, Trash2 } from 'lucide-react';
 import { Patient } from '../types';
-import { searchPatients, getRecentPatients } from '../services/databaseService';
+import { searchPatients, getRecentPatients, deletePatient } from '../services/databaseService';
 
 interface PatientSearchModalProps {
   isOpen: boolean;
@@ -75,16 +75,41 @@ export default function PatientSearchModal({
     return cnic;
   };
 
+  const handleDeletePatient = async (patient: Patient, e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete patient ${patient.full_name}? This will also delete all associated visits, medical history, tests, and vital signs. This action cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await deletePatient(patient.id);
+      setRecentPatients(prev => prev.filter(p => p.id !== patient.id));
+      setSearchResults(prev => prev.filter(p => p.id !== patient.id));
+    } catch (error) {
+      alert('Failed to delete patient: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
+  };
+
   const PatientCard = ({ patient }: { patient: Patient }) => (
     <div
       onClick={() => onSelectPatient(patient)}
-      className="border rounded-lg p-4 cursor-pointer hover:bg-blue-50 hover:border-blue-500 transition-all"
+      className="border rounded-lg p-4 cursor-pointer hover:bg-blue-50 hover:border-blue-500 transition-all relative group"
     >
+      <button
+        onClick={(e) => handleDeletePatient(patient, e)}
+        className="absolute top-3 right-3 p-2 bg-white hover:bg-red-50 border border-slate-200 hover:border-red-300 rounded-lg transition-all opacity-0 group-hover:opacity-100 z-10"
+        title="Delete patient"
+      >
+        <Trash2 className="w-4 h-4 text-slate-400 hover:text-red-600" />
+      </button>
       <div className="flex items-start gap-3">
         <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
           <User className="w-6 h-6 text-blue-600" />
         </div>
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 pr-10">
           <h3 className="font-semibold text-gray-900">{patient.full_name}</h3>
           <div className="mt-1 space-y-1">
             <p className="text-sm text-gray-600">
